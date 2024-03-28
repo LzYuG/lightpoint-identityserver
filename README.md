@@ -1,7 +1,7 @@
 # lightpoint-identityserver
 Identity authentication template built using Identity Server 4 and Blazor, Razor (UI：Ant Blazor)
 
-一个使用身份认证基架，使用Blazor ServerSide + Rezor Page搭建OAuth流程中使用的视图，分离业务模型，接口，期望以一套代码应对后续复杂的情况(如从IdentityServe4切换至OpenidDict(working hard))。
+一个身份认证基架，使用Blazor ServerSide + Rezor Page搭建OAuth流程中使用的视图，分离业务模型，接口，期望以一套代码应对后续复杂的情况(如从IdentityServe4切换至OpenidDict(working hard))，除了作为身份认证中心外，也可作为快速开发框架使用。
 
 `目前默认以IdentityServer4来作为模板实现，包括端点、基础实体、接口，并再提供接口支持自定义实现`
 
