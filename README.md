@@ -16,6 +16,4 @@ Identity authentication template built using Identity Server 4 and Blazor, Razor
 |7|后台作业|Hangfire|[代码仓库](https://github.com/HangfireIO/Hangfire)，[指南](https://docs.hangfire.io/en/latest/)，在 .NET  应用程序中执行后台处理的简单方法。无需 Windows 服务或单独的进程，由持久存储支持.|
 |8|日志|Serilog|[代码仓库](https://github.com/serilog/serilog)，[指南](https://github.com/serilog/serilog/wiki)|
 |9|与邮件处理相关|Mailkit/Minekit|[代码仓库](https://github.com/jstedfast/MailKit)，[指南](http://www.mimekit.net/docs/html/Introduction.htm)|
-|10|规约模式应用支持|Ardalis.Specification|[代码仓库](https://github.com/ardalis/Specification)，[指南](http://specification.ardalis.com/) 本项目中主要采用 DDD，其中对于规约模式主要用户将业务规则（通常是隐式业务规则）封装成独立的逻辑单元，从而将隐式业务规则提炼为显示概念，并达到代码复用的目的。| 
-|11|中介模式应用支持|MediatR|[代码仓库](https://github.com/jbogard/MediatR)，[指南](https://github.com/jbogard/MediatR/wiki)|
-|12|简洁架构设计参考|简洁架构|[代码仓库及指南](https://github.com/ardalis/cleanarchitecture)|
+|10|简洁架构设计参考|简洁架构|[代码仓库及指南](https://github.com/ardalis/cleanarchitecture)|
