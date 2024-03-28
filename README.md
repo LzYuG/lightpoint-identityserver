@@ -17,3 +17,15 @@ Identity authentication template built using Identity Server 4 and Blazor, Razor
 |8|日志|Serilog|[代码仓库](https://github.com/serilog/serilog)，[指南](https://github.com/serilog/serilog/wiki)|
 |9|与邮件处理相关|Mailkit/Minekit|[代码仓库](https://github.com/jstedfast/MailKit)，[指南](http://www.mimekit.net/docs/html/Introduction.htm)|
 |10|简洁架构设计参考|简洁架构|[代码仓库及指南](https://github.com/ardalis/cleanarchitecture)|
+
+# How To Used?
+首先确保您已经安装PostgreSQL（或者您已经切换至其他EF Core支持的数据库（甚至您已经切换了仓储实现），所以您可能需要安装好您计划使用的数据库），如果是使用EF Core的情况下，我们采用的是CodeFirst模式，您应参照`数据迁移参考.txt`中的迁移记录，使用`Add-Migration`生成迁移，使用`Update-Database`进行数据库更新（生产环境下，您应使用`Script-Migration`生成SQL迁移语句）。
+
+数据迁移完成之后，您应该可以正常运行，但您仍需进入 `/Initor` 地址，填写所需的信息之后进行数据初始化即可正常享用。
+
+当前仅为Demo版本，一些功能仍在实现中，如
+1. 一些细节仍在处理
+2. WebAuthn模式
+3. OpenIddict实现
+
+目前版本主要也是对IdentityServer4 QuickStart中MVC模式切换至Blazor的尝试，本质上是为了获得了更高的页面灵活性~（以及更好的开发体验）~
