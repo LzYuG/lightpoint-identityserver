@@ -28,4 +28,4 @@ Identity authentication template built using Identity Server 4 and Blazor, Razor
 2. WebAuthn模式
 3. OpenIddict实现
 
-目前版本主要也是对IdentityServer4 QuickStart中MVC模式切换至Blazor的尝试，本质上是为了获得了更高的页面灵活性~（以及更好的开发体验）~
+目前版本主要也是对IdentityServer4 QuickStart中MVC模式切换至Blazor的尝试，本质上是为了获得了更高的页面灵活性（以及更好的开发体验）
