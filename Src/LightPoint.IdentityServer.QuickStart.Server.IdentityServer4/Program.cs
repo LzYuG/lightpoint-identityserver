@@ -1,24 +1,21 @@
 using IdentityServer4;
-using IdentityServer4.Models;
-using IdentityServer4.Test;
-using Microsoft.Extensions.DependencyInjection;
 using LightPoint.IdentityServer.Blazor;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.HttpOverrides;
-using LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.LightPointIdentityServer;
 using LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.LightPointIdentityServer.ServiceImps.PageServices;
 using LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.LightPointIdentityServer.ServiceImps.Stores;
-using IdentityServer4.Stores;
-using Microsoft.AspNetCore.Mvc;
 using LightPoint.IdentityServer.ServerInfrastructure.Middlewares.MutilTenant;
 using LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.IdentityServer4Imps;
 using LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.LightPointIdentityServer.ServiceImps.ResourceServices;
 using LightPoint.IdentityServer.QuickStart.Foundation.LightPointIdentityServer;
 using IdentityServer4.Extensions;
+using Serilog.Configuration;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +64,18 @@ builder.Services.AddAuthentication()
         options.AllowedCertificateTypes = CertificateTypes.All;
         options.RevocationMode = X509RevocationMode.NoCheck;
     });
+
+Log.Logger = new LoggerConfiguration()
+           .MinimumLevel.Debug()
+           .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+           .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+           .MinimumLevel.Override("System", LogEventLevel.Warning)
+           .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
+           .Enrich.FromLogContext()
+           .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}", theme: AnsiConsoleTheme.Code)
+           .CreateLogger();
+
+builder.Host.UseSerilog();
 
 //builder.Services.AddCertificateForwardingForNginx();
 
