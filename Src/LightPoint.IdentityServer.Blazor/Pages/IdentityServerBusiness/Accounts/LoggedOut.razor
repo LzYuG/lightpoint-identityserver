@@ -1,0 +1,22 @@
+﻿@page "/Account/LoggedOut"
+@layout EmptyLayout
+@inherits GlobalConfigPageBase
+
+
+<Result Icon="check-circle-outline"
+        Title="退出登录"
+        SubTitle="您已成功退出应用登录状态">
+    <Extra>
+        @if (RedirectUri != null)
+        {
+            <div>
+                点击 <a class="PostLogoutRedirectUri" href="@RedirectUri">此处</a> 返回应用
+            </div>
+        }
+        @if (SignOutIframeUrl != null)
+        {
+            <iframe width="0" height="0" class="signout" src="@SignOutIframeUrl"></iframe>
+        }
+        
+    </Extra>
+</Result>

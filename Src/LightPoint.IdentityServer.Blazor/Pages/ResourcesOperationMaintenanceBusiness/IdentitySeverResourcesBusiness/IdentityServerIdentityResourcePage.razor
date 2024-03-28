@@ -1,0 +1,76 @@
+﻿@page "/IdentitySeverResourcesBusiness/IdentityServerIdentityResource"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM03.IdentityServerResources.IdentityResource;
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.IdentityResource;
+@inherits PageBase<Guid, IdentityServerIdentityResource, IdentityServerIdentityResourceDQM, IdentityServerIdentityResourceDCM, IIdentityServerIdentityResourceService>
+
+<CardBox Title="IdentityServerIdentityResource">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="IdentityServerIdentityResourceDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="IdentityServerIdentityResourceDQM" Name="Required">
+                @(context.Model.Required ? "是" : "否")
+            </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerIdentityResourceDQM" Name="Emphasize">
+                @(context.Model.Emphasize ? "是" : "否")
+            </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerIdentityResourceDQM" Name="Enabled">
+                @(context.Model.Enabled ? "是" : "否")
+            </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerIdentityResourceDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm TModel="IdentityServerIdentityResourceDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+ @code {
+
+    public override TableParameters<IdentityServerIdentityResourceDQM> TableParameters { get; set; } = new TableParameters<IdentityServerIdentityResourceDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Name), Header = "名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.DisplayName), Header = "显示名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Id), Header = "Id"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.SortCode), Header = "排序码", Sortable = true},
+                 new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Required), Header = "是否必须", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Emphasize), Header = "是否重要", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Enabled), Header = "是否启用", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerIdentityResourceDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名称", Placeholder = "请输入名称", Prop = "Name", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "显示名称", Placeholder = "请输入显示名称", Prop =  nameof(IdentityServerIdentityResourceDCM.DisplayName), FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(IdentityServerIdentityResourceDCM.SortCode), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否必须", Placeholder = "是否必须", Prop = nameof(IdentityServerIdentityResourceDCM.Required) },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否重要", Placeholder = "是否重要", Prop = nameof(IdentityServerIdentityResourceDCM.Emphasize) },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否启用", Placeholder = "是否启用", Prop = nameof(IdentityServerIdentityResourceDCM.Enabled) },
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(IdentityServerIdentityResourceDCM.Description) },
+    };
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

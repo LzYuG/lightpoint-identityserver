@@ -1,0 +1,378 @@
+﻿@using LightPoint.IdentityServer.Blazor.Layout.Header;
+@using LightPoint.IdentityServer.Blazor.Layout.MenuNav;
+@using LightPoint.IdentityServer.DtoModels.DM01.SystemResource;
+@using LightPoint.IdentityServer.Blazor.Shared;
+@using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS01.SystemResources.Interfaces
+@using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS02.ApplicationResources.Imps
+@using LightPoint.IdentityServer.ServerInfrastructure.Middlewares.MutilTenant
+@using LightPoint.IdentityServer.Shared.Helpers
+
+@inherits LayoutComponentBase
+
+@{
+    <AuthorizeView Roles="@_RootRole">
+        <Authorized>
+            @{
+                if (AuthorizeComplated)
+                {
+                    <Layout Style="min-height: 100vh; ">
+                        <Sider Collapsible @bind-Collapsed="Collapsible" Theme="SiderTheme.Light" Style="border-right:1px solid #cdcdcd50">
+                             <div class="logo" style="display: flex;">
+                                 <div @onclick="OnClickLogo">
+                                     <img src="/@(PageConstants.DefaultLogo)" style="height: 36px;margin: 0 auto; cursor: pointer" />
+                                 </div>
+
+                                 @{
+                                    if (!Collapsible)
+                                    {
+                                        <div style="padding-left: 5px">
+                                            <div style="font-size:13px; line-height: 18px">
+                                                @(PageConstants.MainApplicationName)
+                                            </div>
+                                            <span style="font-size: 12px; color: #708090">@(PageConstants.MainApplicationSubName)</span>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <Divider Style="margin: 0">
+
+                            </Divider>
+                            <div class="menu-box" style="max-height: calc(100vh - 120px); overflow-y: scroll">
+                                <LightPointNavMenu @ref="NavMenuRef" OnMenuChanged="OnMenuChanged"></LightPointNavMenu>
+                            </div>
+
+                        </Sider>
+                        <Layout Class="site-layout">
+                            <Header Class="site-layout-background" Style=" padding: 0 ;">
+                                <CascadingValue Value="BreadcrumbItemModels">
+                                    <LightPointHeader OnChangeTenant='OnChangeTenant' OnClickBreadcrumbItem="OnClickBreadcrumbItem"></LightPointHeader>
+                                </CascadingValue>
+                            </Header>
+                            <Content>
+                                <CascadingValue Value="CacheTagModels">
+                                    <CacheTag OnClosedTag="OnClosedTag" OnChangeTag="OnChangeTag" OnChangeTags="OnChangeTags"></CacheTag>
+                                </CascadingValue>
+                                <div style="overflow: hidden">
+                                    <div class="site-layout-background fade-in" id="BodyBox" style=" min-height: calc(100vh - 130px);margin:16px 16px 0 16px; border-radius: 5px; padding: 10px">
+                                        <CascadingValue Value="NowSystemTenant">
+                                            @{
+                                                if (ShowContent)
+                                                {
+                                                    @Body
+                                                }
+                                            }
+                                        </CascadingValue>
+                                    </div>
+                                </div>
+
+                            </Content>
+                            @* <Footer Style="text-align:center; padding: 0px 20px 10px 20px">Framework Design ©2023 Auth by LazYu</Footer> *@
+                        </Layout>
+                    </Layout>
+                }
+            }
+
+        </Authorized>
+        <NotAuthorized>
+            <UnAuthorizedRedirect />
+        </NotAuthorized>
+    </AuthorizeView>
+}
+
+
+<style>
+    .logo {
+        height: 32px;
+        margin: 16px;
+    }
+
+    .site-layout .site-layout-background {
+        background: #fff;
+    }
+
+     .ant-layout, .ant-layout-footer {
+         background: #F2F6FF !important;
+    }
+
+    .menu-box::-webkit-scrollbar {
+        display: none;
+        -ms-overflow-style: none; /* 适用于 IE 和 Edge */
+        scrollbar-width: none; /* 适用于 Firefox */
+    }
+</style>
+
+@inject IJSRuntime JSRuntime
+@inject ToolsJsInterop ToolsJsInterop
+@inject ILocalStorageService LocalStorageService
+@code {
+    private bool ShowContent { get; set; }
+
+    private LightPointNavMenu? NavMenuRef { get; set; }
+
+    private bool Collapsible { get; set; }
+
+    public SystemTenantDQM NowSystemTenant { get; set; } = new SystemTenantDQM() { TenantIdentifier = null };
+
+    public List<CacheTagModel> CacheTagModels { get; set; } = new List<CacheTagModel>();
+
+    public List<BreadcrumbItemModel> BreadcrumbItemModels { get; set; } = new List<BreadcrumbItemModel>();
+    [Inject]
+    public AuthenticationStateProvider? AuthenticationStateProvider { get; set; }
+    [Inject]
+    public IApplicationUserService? ApplicationUserService { get; set; }
+    [Inject]
+    public ILayoutInitor? LayoutInitor { get; set; }
+    [Inject]
+    public ISystemTenantService? SystemTenantService { get; set; }
+    [Inject]
+    public TenantInfoAccessor? TenantInfoAccessor { get; set; }
+    [Inject]
+    public IApplicationMenuStore? ApplicationMenuStore { get; set; }
+
+    private string? _RootRole = null;
+
+    public bool AuthorizeComplated { get; set; }
+
+
+    private void OnChangeTenant(Tuple<SystemTenantDQM, bool> data)
+    {
+        this.NowSystemTenant = data.Item1;
+        if (data.Item2)
+        {
+            NavigationManager!.NavigateTo(NavigationManager.Uri, true);
+        }
+
+        ShowContent = true;
+        StateHasChanged();
+    }
+
+    private async Task OnClosedTag(CacheTagModel cacheTag)
+    {
+        cacheTag.Popconfirm = false;
+        StateHasChanged();
+        var nowPath = NavigationManager!.Uri.Replace(NavigationManager.BaseUri, "");
+        CacheTagModels.Remove(cacheTag);
+        await LocalStorageService.SetItemAsync<List<CacheTagModel>>(nameof(CacheTagModels), CacheTagModels);
+        // 回到主页
+        if(cacheTag.Path == nowPath)
+        {
+            NavigationManager.NavigateTo("", true);
+        }
+    }
+
+    private async Task OnChangeTag(CacheTagModel cacheTag)
+    {
+        AuthorizeComplated = false;
+        await Authorize();
+        // 处理面包屑
+        var menu = NavMenuRef!.ApplicationMenus.FirstOrDefault(x => x.Path == cacheTag.Path);
+        if(menu == null)
+        {
+            menu = NavMenuRef!.ApplicationMenus.FirstOrDefault(x => x.Childrens.Any(y => y.Path == cacheTag.Path));
+            if(menu == null)
+            {
+                menu = NavMenuRef!.ApplicationMenus.FirstOrDefault(x => x.Childrens.Any(y => y.Childrens.Any(z => z.Path == cacheTag.Path)));
+                if(menu == null)
+                {
+                    return;
+                }
+                else
+                {
+                    menu = menu.Childrens.First(x => x.Childrens.Any(y => y.Path == cacheTag.Path)).Childrens.First(x => x.Path == cacheTag.Path);
+                }
+            }
+            else
+            {
+                menu = menu.Childrens.First(x => x.Path == cacheTag.Path);
+            }
+        }
+        await UpdateBreadcrumbItemModels(menu);
+    }
+
+    private async Task OnChangeTags(List<CacheTagModel> cacheTagModels)
+    {
+        CacheTagModels = cacheTagModels;
+        StateHasChanged();
+        await LocalStorageService!.SetItemAsync<List<CacheTagModel>>(nameof(CacheTagModels), cacheTagModels);
+    }
+
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+
+    private async Task OnClickBreadcrumbItem(BreadcrumbItemModel model)
+    {
+        BreadcrumbItemModels = new List<BreadcrumbItemModel>();
+        if (model.Path == "")
+        {
+            // BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+            //     {
+            //         Name = "主页",
+            //         Path = ""
+            //     });
+        }
+        await LocalStorageService.SetItemAsync<List<BreadcrumbItemModel>>(nameof(BreadcrumbItemModels), BreadcrumbItemModels);
+    }
+
+    private void OnClickLogo()
+    {
+        NavigationManager!.NavigateTo("/");
+    }
+
+    private async Task OnMenuChanged(ApplicationMenu? menu)
+    {
+        AuthorizeComplated = false;
+        await Authorize();
+
+        await UpdateBreadcrumbItemModels(menu);
+        if (!CacheTagModels.Any(x => x.Path == menu!.Path) && menu!.Path != "" && menu!.Path != "/")
+        {
+            CacheTagModels.Add(new CacheTagModel()
+                {
+                    Name = menu.Name!,
+                    Path = menu.Path!
+                });
+            await LocalStorageService.SetItemAsync<List<CacheTagModel>>(nameof(CacheTagModels), CacheTagModels);
+        }
+    }
+
+
+    private async Task UpdateBreadcrumbItemModels(ApplicationMenu? menu)
+    {
+        var parent = NavMenuRef!.ApplicationMenus.FirstOrDefault(x => x.Childrens.Any(x => x.Id == menu!.Id));
+        BreadcrumbItemModels = new List<BreadcrumbItemModel>();
+        if (menu!.Path == "")
+        {
+            // BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+            //     {
+            //         Name = "主页",
+            //         Path = ""
+            //     });
+        }
+        // top
+        else if (parent == null)
+        {
+            // BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+            //     {
+            //         Name = "主页",
+            //         Path = ""
+            //     });
+
+            BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+                {
+                    Name = menu.Name!,
+                });
+        }
+        else
+        {
+            // BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+            //     {
+            //         Name = "主页",
+            //         Path = ""
+            //     });
+            BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+                {
+                    Name = parent.Name!,
+                });
+            BreadcrumbItemModels.Add(new BreadcrumbItemModel()
+                {
+                    Name = menu.Name!,
+                });
+        }
+        await LocalStorageService.SetItemAsync<List<BreadcrumbItemModel>>(nameof(BreadcrumbItemModels), BreadcrumbItemModels);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (!firstRender)
+        {
+            await ToolsJsInterop.TriggerAnimation("BodyBox");
+        }
+        else
+        {
+            AuthorizeComplated = false;
+            await Authorize();
+
+            var storageCacheTagModels = await LocalStorageService.GetItemAsync<List<CacheTagModel>>(nameof(CacheTagModels));
+            if (storageCacheTagModels != null)
+            {
+                for (var i = 0; i < storageCacheTagModels.Count; i++)
+                {
+                    storageCacheTagModels[i].Popconfirm = false;
+                }
+                this.CacheTagModels = storageCacheTagModels;
+            }
+            var storageBreadcrumbItemModels = await LocalStorageService.GetItemAsync<List<BreadcrumbItemModel>>(nameof(BreadcrumbItemModels));
+            if (storageCacheTagModels != null)
+            {
+                this.BreadcrumbItemModels = storageBreadcrumbItemModels;
+            }
+            StateHasChanged();
+        }
+    }
+
+
+    private async Task Authorize()
+    {
+        var menus = await ApplicationMenuStore!.GetMenus();
+
+        // 应是/xxx/xxx
+        var requestPath = new Uri(NavigationManager!.Uri).AbsolutePath;
+
+        var appMenu = menus!.FirstOrDefault(x => x.Path == requestPath);
+        if (appMenu == null)
+        {
+            var parentMenu = menus!.FirstOrDefault(x => x.Childrens.Any(y => y.Path == requestPath));
+            if (parentMenu != null)
+            {
+                appMenu = parentMenu.Childrens.FirstOrDefault(x => x.Path == requestPath);
+            }
+        }
+        // 三级
+        if (appMenu == null)
+        {
+            var parentMenuNext = menus!.FirstOrDefault(x => x.Childrens.Any(z => z.Childrens.Any(y => y.Path == requestPath)));
+            if (parentMenuNext != null)
+            {
+                var parentMenu = parentMenuNext.Childrens!.FirstOrDefault(x => x.Childrens.Any(y => y.Path == requestPath));
+                if (parentMenu != null)
+                {
+                    appMenu = parentMenu.Childrens.FirstOrDefault(x => x.Path == requestPath);
+                }
+            }
+        }
+
+        if(appMenu == null)
+        {
+            NavigationManager!.NavigateTo("/404", true);
+            return;
+        }
+
+        var authenticationState = await AuthenticationStateProvider!.GetAuthenticationStateAsync();
+        if (appMenu!.OnlyRoot)
+        {
+            if (!await ApplicationUserService!.HasBoAsync(x => x.Id == Guid.Parse(authenticationState!.User.FindFirst("sub")!.Value)))
+            {
+                NavigationManager.NavigateTo("/403");
+                return;
+            }
+        }
+
+        if (appMenu.OnlyRootTenant)
+        {
+            if (!await SystemTenantService!.IsRootTenant(string.IsNullOrWhiteSpace(NowSystemTenant.TenantIdentifier) ? TenantInfoAccessor!.TenantIdentifier! : NowSystemTenant.TenantIdentifier!))
+            {
+                NavigationManager!.NavigateTo("/404", true);
+                return;                
+            }
+        }
+
+        if (appMenu!.AllowRoles != null)
+        {
+            _RootRole = appMenu!.AllowRoles;
+        }
+
+        // 一定是鉴别身份是否能访问之后才开始渲染
+        AuthorizeComplated = true;
+    }
+}

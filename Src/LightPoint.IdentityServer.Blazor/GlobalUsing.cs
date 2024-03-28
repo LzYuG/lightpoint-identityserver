@@ -1,0 +1,17 @@
+﻿global using LightPoint.IdentityServer.Blazor.Components.Page;
+global using LightPoint.IdentityServer.Blazor.Components.Forms;
+global using LightPoint.IdentityServer.Blazor.Components.Tables;
+global using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.ApiScope;
+global using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS03.IdentityServerResources.Interfaces;
+global using Microsoft.AspNetCore.Components;
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Net.NetworkInformation;
+global using System.Text;
+global using System.Threading.Tasks;
+global using LightPoint.IdentityServer.Blazor.Components.Tools;
+global using LightPoint.IdentityServer.Blazor.Components.Forms.Models;
+global using LightPoint.IdentityServer.Shared.Helpers;
+global using LightPoint.IdentityServer.ServerInfrastructure.Store;
+global using LightPoint.IdentityServer.ServerInfrastructure.Store.Models;

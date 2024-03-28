@@ -1,0 +1,266 @@
+﻿@using LightPoint.IdentityServer.DtoModels.DM02.ApplicationIdentityResources
+@inherits GlobalConfigPageBase
+
+<Divider Orientation="center" Style="font-weight:bold">管理您的个人信息</Divider>
+@if (ApplicationUserDCM != null)
+{
+    <Form Model="@ApplicationUserDCM"
+          ValidateMode="@FormValidateMode.Rules"
+      ValidateOnChange
+           Layout="@(FormLayout.Vertical)"
+           LabelColSpan="24"
+           OnFinish="async ()=> await SubmitForm()"
+           WrapperColSpan="24"
+           Size="@AntSizeLDSType.Large">
+         <GridRow Gutter="16">
+
+             <GridCol Span="12">
+                 <FormItem Label="昵称" Rules=@(new FormValidationRule[]{ new FormValidationRule{ Required = true } })>
+                     <Input @bind-Value="@context!.Name" />
+                 </FormItem>
+             </GridCol>
+
+             <GridCol Span="12">
+                 <FormItem Label="用户名" Rules=@(new FormValidationRule[]{ new FormValidationRule{ Required = true } })>
+                     <Input @bind-Value="@context!.UserName" Disabled />
+                 </FormItem>
+             </GridCol>
+         </GridRow>
+
+
+         <FormItem>
+             <Button Type="@ButtonType.Primary" HtmlType="submit" Class="button-width">
+                 保存修改
+             </Button>
+         </FormItem>
+     </Form>
+}
+
+<Divider Orientation="center" Style="font-weight:bold">修改登录密码</Divider>
+@if (ApplicationUserDCM != null)
+{
+    <Tabs Animated>
+     <TabPane Tab="我记得旧密码" Key="1">
+
+         <div class="sp-width-input">
+             <p style="margin : 0">旧密码</p>
+             <InputPassword AutoComplete="@false" @bind-Value="OldPassword" Placeholder="请输入旧密码" Size="@(InputSize.Large)" />
+         </div>
+         <div style="display: flex; flex-wrap: wrap">
+             <div class="sp-width-input">
+                 <div>
+                     <p style="padding-top: 20px;margin : 0">新密码</p>
+                     <InputPassword  AutoComplete="@false" @bind-Value="NewPassword" Placeholder="请输入新密码" Size="@(InputSize.Large)" />
+                 </div>
+             </div>
+             <div class="sp-width-input">
+                 <div>
+                     <p style="padding-top: 20px;margin : 0">新密码确认</p>
+                     <InputPassword  AutoComplete="@false" @bind-Value="ConfirmPassword" Placeholder="请再输入一次新密码" Size="@(InputSize.Large)" />
+                 </div>
+             </div>
+         </div>
+         <Button style="margin-top: 20px;" Type="@ButtonType.Primary" OnClick="SubmitResetPasswordByOldPassword" Size="@(ButtonSize.Large)" Class="button-width">
+             提交修改
+         </Button>
+     </TabPane>
+     @{
+            if (!string.IsNullOrWhiteSpace(ApplicationUserDCM!.PhoneNumber) && ApplicationUserDCM!.PhoneNumberConfirmed && this.CurrentServerShortMessageServiceConfig != null
+            && this.CurrentServerShortMessageServiceConfig.IsEnable)
+            {
+                <TabPane Tab="使用短信验证码" Key="2">
+                    <div style="display: flex; flex-wrap: wrap">
+                        <div class="sp-width-input">
+                            <div>
+                                <p style="margin : 0">新密码</p>
+                                <InputPassword AutoComplete="@false" @bind-Value="NewPassword" Placeholder="请输入新密码" Size="@(InputSize.Large)" />
+                            </div>
+                        </div>
+                        <div class="sp-width-input">
+                            <div>
+                                <p style="margin : 0">新密码确认</p>
+                                <InputPassword AutoComplete="@false" @bind-Value="ConfirmPassword" Placeholder="请再输入一次新密码" Size="@(InputSize.Large)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sp-width-input">
+                        <p style="padding-top: 20px;margin : 0">使用已绑定的手机号码</p>
+                        <AntDesign.Input Placeholder="请输入短信验证码" AutoComplete="@false" @bind-Value="@(ResetPasswordShortMessageValidationCode)" Size="@InputSize.Large">
+                            <Suffix>
+                                @{
+                                    if (ShortMessageSendingIterval > 0)
+                                    {
+                                        <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(ShortMessageSendingIterval)秒后重新发送</Button>
+                                    }
+                                    else
+                                    {
+                                        <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendResetPasswordShortMessageValidationCode">获取验证码</HumanMachineValidateOperationButton>
+                                    }
+                                }
+                                <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SubmitResetPasswordByShortMessageValidationCode"></Button>
+                            </Suffix>
+                        </AntDesign.Input>
+                    </div>
+                </TabPane>
+            }
+            if (!string.IsNullOrWhiteSpace(ApplicationUserDCM!.Email) && ApplicationUserDCM!.EmailConfirmed && this.CurrentServerEmailConfig != null
+            && this.CurrentServerEmailConfig.IsEnable)
+            {
+                <TabPane Tab="使用邮箱验证码" Key="3">
+                 <div style="display: flex; flex-wrap: wrap">
+                        <div class="sp-width-input">
+                            <div>
+                                <p style="margin : 0">新密码</p>
+                                <InputPassword AutoComplete="@false" @bind-Value="NewPassword" Placeholder="请输入新密码" Size="@(InputSize.Large)" />
+                            </div>
+                        </div>
+                        <div class="sp-width-input">
+                            <div>
+                                <p style="margin : 0">新密码确认</p>
+                                <InputPassword AutoComplete="@false" @bind-Value="ConfirmPassword" Placeholder="请再输入一次新密码" Size="@(InputSize.Large)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sp-width-input">
+                        <p style="padding-top: 20px;margin : 0">使用已绑定的邮箱</p>
+                        <AntDesign.Input Placeholder="请输入邮箱收到的验证码" AutoComplete="@false" @bind-Value="@(ResetPasswordEmailValidationCode)" Size="@InputSize.Large">
+                            <Suffix>
+                                @{
+                                    if (EmailSendingIterval > 0)
+                                    {
+                                        <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(EmailSendingIterval)秒后重新发送</Button>
+                                    }
+                                    else
+                                    {
+                                        <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendResetPasswordEmailValidationCode">获取验证码</HumanMachineValidateOperationButton>
+                                    }
+                                }
+                                <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SubmitResetPasswordByEmailValidationCode"></Button>
+                            </Suffix>
+                        </AntDesign.Input>
+                    </div>
+                </TabPane>
+            }
+        }
+    </Tabs>
+}
+
+
+<Divider Orientation="center" Style="font-weight:bold">账户安全配置</Divider>
+@if (ApplicationUserDCM != null)
+{
+    <div>
+        @{
+            if (this.CurrentServerShortMessageServiceConfig != null && this.CurrentServerShortMessageServiceConfig.IsEnable)
+            {
+                <p style="margin : 0">手机号码：</p>
+                if (!string.IsNullOrWhiteSpace(PhoneNumberConfirmModel.PhoneNumber) && PhoneNumberConfirmModel.Confirmed)
+                {
+                    <AntDesign.Input Value="@("已绑定：" + ApplicationUserDCM.PhoneNumber)" Disabled Placeholder="请输入手机号码进行绑定" Size="@(InputSize.Large)">
+                         <AddOnAfter>
+                             <div style="cursor: pointer" @onclick='async ()=>{ PhoneNumberConfirmModel.PhoneNumber = "";  PhoneNumberConfirmModel.Confirmed = false; StateHasChanged(); }'>
+                                 更换
+                             </div>
+                         </AddOnAfter>
+                     </AntDesign.Input>
+                }
+                else
+                {
+                    <div style="display: flex; flex-wrap: wrap">
+                        <div class="sp-width-input">
+                            <Input @bind-Value="@PhoneNumberConfirmModel.PhoneNumber" Placeholder="请输入手机号码进行绑定" Size="@InputSize.Large" />
+                        </div>
+                        <div class="sp-width-input">
+                            <AntDesign.Input Placeholder="请输入短信验证码" @bind-Value="@(PhoneNumberConfirmModel.ValidateCode)" Size="@InputSize.Large">
+                                <Suffix>
+                                    @{
+                                        if (ShortMessageSendingIterval > 0)
+                                        {
+                                            <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(ShortMessageSendingIterval)秒后重新发送</Button>
+                                        }
+                                        else
+                                        {
+                                            <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendConfirmPhoneNumberValidationCodeShortMessage">获取验证码</HumanMachineValidateOperationButton>
+                                        }
+                                    }
+                                    <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="ConfirmPhoneNumberSubmit"></Button>
+                                </Suffix>
+                            </AntDesign.Input>
+                        </div>
+                    </div>
+                }
+            }
+        }
+
+        @{
+            if (this.CurrentServerEmailConfig != null && this.CurrentServerEmailConfig.IsEnable)
+            {
+                <p style="padding-top: 20px;margin : 0">邮箱：</p>
+
+
+                if (!string.IsNullOrWhiteSpace(EmailConfirmModel.Email) && EmailConfirmModel.Confirmed)
+                {
+                    <AntDesign.Input Value="@("已绑定：" + ApplicationUserDCM.Email)" Disabled Placeholder="请输入邮箱进行绑定" Size="@(InputSize.Large)">
+                         <AddOnAfter>
+                             <div style="cursor: pointer" @onclick='async ()=>{ EmailConfirmModel.Email = "";  EmailConfirmModel.Confirmed = false; StateHasChanged(); }'>
+                                 更换
+                             </div>
+                         </AddOnAfter>
+                     </AntDesign.Input>
+                }
+                else
+                {
+                    <div style="display: flex; flex-wrap: wrap">
+                        <div class="sp-width-input">
+                            <Input @bind-Value="@EmailConfirmModel.Email" Placeholder="请输入邮箱进行绑定" Size="@InputSize.Large" />
+                        </div>
+                        <div class="sp-width-input">
+                            <AntDesign.Input Placeholder="请输入邮箱收到的验证码" @bind-Value="@(EmailConfirmModel.ValidateCode)" Size="@InputSize.Large">
+                                <Suffix>
+                                    @{
+                                        if (EmailSendingIterval > 0)
+                                        {
+                                            <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(EmailSendingIterval)秒后重新发送</Button>
+                                        }
+                                        else
+                                        {
+                                            <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendConfirmEmailValidationCodeEmail">获取验证码</HumanMachineValidateOperationButton>
+                                        }
+                                    }
+                                    <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="ConfirmEmailSubmit"></Button>
+                                </Suffix>
+                            </AntDesign.Input>
+                        </div>
+                    </div>
+
+                }
+            }
+        }
+
+    </div>
+}
+
+<style>
+    .sp-width-input {
+        width: calc(50% - 16px);
+        margin-right: 16px;
+    }
+
+    .button-width {
+        width: 30%;
+    }
+
+    @@media screen and (orientation: portrait) {
+        .sp-width-input {
+            width: 100% !important;
+            padding-top: 10px;
+            margin-right: 0 !important;
+        }
+
+        .button-width {
+            width: 100% !important;
+        }
+    }
+</style>

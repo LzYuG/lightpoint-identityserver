@@ -1,0 +1,144 @@
+﻿@layout CommonUserLayout
+@inherits GlobalConfigPageBase
+
+<IdentityServerBusinessTemplate IdentityServerBusinessTemplatePageParams="IdentityServerBusinessTemplatePageParams" >
+   
+    @{
+        if (string.IsNullOrWhiteSpace(UserCode))
+        {
+            <div style="width: 70%; margin: 0 auto;">
+                <p style="font-size: 24px; margin-bottom: 0">用户代码</p>
+                <p>请输入显示在您设备中的用户代码：</p>
+                <Input Size="@ButtonSize.Large" @bind-Value="@NewUserCode" />
+                <p></p>
+                <Button OnClick="@RefreshDeviceCode" Type="@ButtonType.Primary" Size="@ButtonSize.Large" Style="min-width: 10em">确定</Button>
+                <p style="color : gray">如无需继续操作，可关闭该界面</p>
+            </div>
+        }
+        else
+        {
+            <div style="width: 70%; margin: 0 auto;max-height: 80vh; overflow: scroll">
+                <p style="font-size: 24px; margin-bottom: 0">@IdentityServerBusinessTemplatePageParams.ClientName 正在请求您的权限</p>
+                <p>本次授权代码：<span class="code">@UserCode</span></p>
+                <p>管理您期望授权该客户端的权限</p>
+                <div style="max-height: 55vh; overflow: scroll">
+                    
+
+                    @{
+                        if (DeviceAuthorizationModel != null)
+                        {
+                            if (DeviceAuthorizationModel.IdentityScopes != null && DeviceAuthorizationModel.IdentityScopes.Any())
+                            {
+                                <Divider Orientation="left" Plain>
+                                 个人信息
+                             </Divider>
+                                @foreach (var scope in DeviceAuthorizationModel.IdentityScopes)
+                                {
+                                    <div>
+                                        <Checkbox Label="A" Disabled="@(scope.Required)" @bind-Checked="@(scope.Checked)">
+                                            <span style="@(scope.Emphasize ? "font-weight: bold" : "")">
+                                                @scope.DisplayName
+                                            </span>
+                                            @if (scope.Required)
+                                            {
+                                                <span><em>(必选)</em></span>
+                                            }
+                                            @if (scope.Description != null)
+                                            {
+                                                <p>@scope.Description</p>
+                                            }
+                                        </Checkbox>
+                                    </div>
+                                }
+                            }
+                        }
+                    }
+
+
+
+
+                    @{
+                        if (DeviceAuthorizationModel != null)
+                        {
+                            if (DeviceAuthorizationModel.ApiScopes != null && DeviceAuthorizationModel.ApiScopes.Any())
+                            {
+                                <Divider Orientation="left" Plain>
+                                 客户端访问权限
+                             </Divider>
+                                @foreach (var scope in DeviceAuthorizationModel.ApiScopes)
+                                {
+                                    <div>
+                                        <Checkbox Label="A" Disabled="@(scope.Required)" @bind-Checked="@(scope.Checked)">
+                                            <span style="@(scope.Emphasize ? "font-weight: bold" : "")">
+                                                @scope.DisplayName
+                                            </span>
+                                            @if (scope.Required)
+                                            {
+                                                <span><em>(必选)</em></span>
+                                            }
+                                            @if (scope.Description != null)
+                                            {
+                                                <p>@scope.Description</p>
+                                            }
+                                        </Checkbox>
+                                    </div>
+                                }
+                            }
+                        }
+                    }
+
+                    <Divider Orientation="left" Plain>
+                     备注
+                 </Divider>
+                    @{
+                        if (DeviceAuthorizationSubmitModel != null)
+                        {
+                            <TextArea Rows="2" Placeholder="对该设备进行说明" MaxLength="100" @bind-Value="@DeviceAuthorizationSubmitModel.Description" />
+                        }
+                    }
+
+                 
+
+                   
+                </div>
+                @{
+                    if (DeviceAuthorizationSubmitModel != null)
+                    {
+                        <div class="item-margin">
+                            <Checkbox @bind-Checked="@DeviceAuthorizationSubmitModel.RememberConsent">
+                                记住我的选择
+                            </Checkbox>
+                        </div>
+                    }
+                }
+                <div class="item-margin">
+                    <Space>
+                        <SpaceItem>
+                            <Button OnClick="@Allow" Type="@ButtonType.Primary" Size="@ButtonSize.Large">同意授权</Button>
+                            <Button OnClick="@NotAllow" Danger Size="@ButtonSize.Large">拒绝授权</Button>
+                         </SpaceItem>
+                     </Space>
+
+                 </div>
+            </div>
+            
+
+        }
+    }
+</IdentityServerBusinessTemplate>
+
+<style>
+    .code {
+        font-size: 18px;
+        @@supports (-webkit-background-clip: text) or (background-clip: text)
+        
+        {
+            background: linear-gradient(#334E76, #5E80AC, #7194BA);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        color: #7194BA
+    }
+</style>

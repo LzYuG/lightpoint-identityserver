@@ -1,0 +1,186 @@
+﻿@page "/IdentitySeverResourcesBusiness/IdentityServerClient"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM03.IdentityServerResources.Client;
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.Client;
+@inherits PageBase<Guid, IdentityServerClient, IdentityServerClientDQM, IdentityServerClientDCM, IIdentityServerClientService>
+
+<CardBox Title="IdentityServerClient">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="IdentityServerClientDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="IdentityServerClientDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm Top="5vh" Width="@("70%")" LabelColSpan="24" WrapperColSpan="24" Layout="@FormLayout.Vertical" TModel="IdentityServerClientDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+             <FormItemSlot TModel="IdentityServerClientDCM" Name="AllowedCorsOrigins">
+                 @{
+                    <Space Style="min-width: 100%; max-width: 100%; flex-wrap: wrap;">
+                        @{
+                            if (context.Model.AllowedCorsOrigins != null)
+                            {
+                                for (var i = 0; i < context.Model.AllowedCorsOrigins.Count; i++)
+                                {
+                                    var tempModel = context.Model.AllowedCorsOrigins[i];
+                                    var index = i;
+                                    <SpaceItem Style="width: 48%; padding-top: 10px">
+                                        <AntDesign.Input TValue="string" Placeholder="添加一个新的AllowedCorsOrigin" Value="@tempModel" ValueChanged="(string val)=>{
+                                                tempModel = val;
+                                                context.Model.AllowedCorsOrigins[index] = val;
+                                                 StateHasChanged();
+                                            }" Style="width: 100%">
+                                            <Suffix>
+                                                <Icon Type="delete" Style="color: red; cursor: pointer;font-size: 24px" Theme="outline"
+                                                      OnClick="async () => { 
+                                                            context.Model.AllowedCorsOrigins.RemoveAt(index); 
+                                                            StateHasChanged(); 
+                                                        }" />
+                                            </Suffix>
+                                        </AntDesign.Input>
+                                    </SpaceItem>
+                                }
+                            }
+                        }
+                        <SpaceItem Style="padding-top: 10px">
+                            <Icon Type="file-add" Theme="outline" Style="cursor: pointer;font-size: 24px;" OnClick="() => _AddAllowedCorsOrigin(context.Model)" />
+                        </SpaceItem>
+                    </Space>
+                }
+                 
+             </FormItemSlot>
+             <FormItemSlot TModel="IdentityServerClientDCM" Name="RedirectUris">
+                @{
+                    <Space Style="min-width: 100%; max-width: 100%; flex-wrap: wrap;">
+                        @{
+                            if (context.Model.RedirectUris != null)
+                            {
+                                for (var i = 0; i < context.Model.RedirectUris.Count; i++)
+                                {
+                                    var tempModel = context.Model.RedirectUris[i];
+                                    var index = i;
+                                    <SpaceItem Style="width: 48%; padding-top: 10px">
+                                        <AntDesign.Input TValue="string" Placeholder="添加一个新的RedirectUri" Value="@tempModel" ValueChanged="(string val)=>{
+                                                tempModel = val;
+                                                context.Model.RedirectUris[index] = val;
+                                                 StateHasChanged();
+                                            }" Style="width: 100%">
+                                            <Suffix>
+                                                <Icon Type="delete" Style="color: red; cursor: pointer;font-size: 24px" Theme="outline"
+                                                      OnClick="async () => {
+                                                            context.Model.RedirectUris.RemoveAt(index);
+                                                            StateHasChanged();
+                                                        }" />
+                                            </Suffix>
+                                        </AntDesign.Input>
+                                    </SpaceItem>
+                                }
+                            }
+                        }
+                        <SpaceItem Style="padding-top: 10px">
+                            <Icon Type="file-add" Theme="outline" Style="cursor: pointer;font-size: 24px;" OnClick="() => _AddRedirectUris(context.Model)" />
+                        </SpaceItem>
+                    </Space>
+                }
+             </FormItemSlot>
+             <FormItemSlot TModel="IdentityServerClientDCM" Name="PostLogoutRedirectUris">
+                @{
+                    <Space Style="min-width: 100%; max-width: 100%; flex-wrap: wrap;">
+                        @{
+                            if (context.Model.PostLogoutRedirectUris != null)
+                            {
+                                for (var i = 0; i < context.Model.PostLogoutRedirectUris.Count; i++)
+                                {
+                                    var tempModel = context.Model.PostLogoutRedirectUris[i];
+                                    var index = i;
+                                    <SpaceItem Style="width: 48%; padding-top: 10px">
+                                        <AntDesign.Input TValue="string" Placeholder="添加一个新的AllowedCorsOrigin" Value="@tempModel" ValueChanged="(string val)=>{
+                                                tempModel = val;
+                                                context.Model.PostLogoutRedirectUris[index] = val;
+                                                 StateHasChanged();
+                                            }" Style="width: 100%">
+                                            <Suffix>
+                                                <Icon Type="delete" Style="color: red; cursor: pointer;font-size: 24px" Theme="outline"
+                                                      OnClick="async () => {
+                                                            context.Model.PostLogoutRedirectUris.RemoveAt(index);
+                                                            StateHasChanged();
+                                                        }" />
+                                            </Suffix>
+                                        </AntDesign.Input>
+                                    </SpaceItem>
+                                }
+                            }
+                        }
+                        <SpaceItem Style="padding-top: 10px">
+                            <Icon Type="file-add" Theme="outline" Style="cursor: pointer;font-size: 24px;" OnClick="() => _AddPostLogoutRedirectUris(context.Model)" />
+                        </SpaceItem>
+                    </Space>
+                }
+             </FormItemSlot>
+             <FormItemSlot TModel="IdentityServerClientDCM" Name="ClientSecrets">
+                @{
+                    <Space Style="min-width: 100%; max-width: 100%; flex-wrap: wrap;">
+                        @{
+                            if (context.Model.ClientSecrets != null)
+                            {
+                                for (var i = 0; i < context.Model.ClientSecrets.Count; i++)
+                                {
+                                    var tempModel = context.Model.ClientSecrets[i];
+                                    bool editable = true;
+                                    if (context.Model.ClientSecrets[i].IsPersistence)
+                                    {
+                                        editable = false;
+                                    }
+                                    var index = i;
+                                    <SpaceItem Style="width: 48%; padding-top: 10px">
+                                        <Space Style="width:100%">
+                                            <SpaceItem Style="width:30%">
+                                                <Select DataSource="@_SecretTypeOptions"
+                                                        TItem="LightPointSelectOption"
+                                                        TItemValue="string"
+                                                        Disabled="!editable"
+                                                        @bind-Value="@(tempModel.LightPointSecretType)"
+                                                        DefaultValue="@tempModel.LightPointSecretType"
+                                                        ValueProperty="c=>c.Value!.ToString()"
+                                                        Placeholder="选择密钥的类型"
+                                                        LabelProperty="c=>c.Label"
+                                                        Style="width:100%">
+                                                </Select>
+                                            </SpaceItem>
+                                            <SpaceItem Style="width:68%">
+                                                <AntDesign.Input TValue="string" Placeholder="输入密钥值" Value="@(tempModel.Value)" ValueChanged="(string val)=>{
+                                                tempModel.Value = val;
+                                                context.Model.ClientSecrets[index].Value = val;
+                                                 StateHasChanged();
+                                            }" Style="width: 100%;" Disabled="!editable">
+                                                    <Suffix>
+                                                        <Icon Type="delete" Style="color: red; cursor: pointer;font-size: 24px" Theme="outline"
+                                                              OnClick="async () => {
+                                                            context.Model.ClientSecrets.RemoveAt(index);
+                                                            StateHasChanged();
+                                                        }" />
+                                                    </Suffix>
+                                                </AntDesign.Input>
+                                            </SpaceItem>
+                                        </Space>
+                                        
+                                        
+                                    </SpaceItem>
+                                }
+                            }
+                        }
+                        <SpaceItem Style="padding-top: 10px">
+                            <Icon Type="file-add" Theme="outline" Style="cursor: pointer;font-size: 24px;" OnClick="() => _AddClientSecrets(context.Model)" />
+                        </SpaceItem>
+                    </Space>
+                }
+             </FormItemSlot>
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>

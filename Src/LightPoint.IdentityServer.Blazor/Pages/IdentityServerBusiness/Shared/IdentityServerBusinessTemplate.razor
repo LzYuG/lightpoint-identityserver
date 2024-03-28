@@ -1,0 +1,68 @@
+﻿@using LightPoint.IdentityServer.Blazor.Pages.IdentityServerBusiness.Shared.Templates
+@layout EmptyLayout
+@inherits GlobalConfigPageBase
+
+<AntContainer />
+<div class="fade-in">
+    @{
+        if (IdentityServerBusinessTemplatePageParams!.Template == "")
+        {
+            <TemplateDefault ChildContent="@(ChildContent!)" IdentityServerBusinessTemplatePageParams="@(IdentityServerBusinessTemplatePageParams)"></TemplateDefault>
+        }
+    }
+</div>
+
+@code {
+    #region TemplateParams
+    [Parameter]
+    public IdentityServerBusinessTemplatePageParams? IdentityServerBusinessTemplatePageParams { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    #endregion
+}
+
+
+
+<style>
+    .item-margin {
+        padding-top: 2vh
+    }
+
+    @@media screen and (max-aspect-ratio: 3/2) and (max-width: 768px) {
+        .left {
+            display: none;
+        }
+
+        .right {
+            width: 100% !important;
+        }
+    }
+
+    .fade-in {
+        animation: fadeIn 1s;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* 滚动条整体样式 */
+    ::-webkit-scrollbar {
+        width: 6px; /* 高宽分别对应横竖滚动条的尺寸 */
+        height: 1px;
+    }
+
+    /* 滚动条滑块 */
+    ::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        box-shadow: inset 0 0 5px rgba(236, 236, 236, 0.1);
+        background: #ccc;
+    }
+
+</style>             

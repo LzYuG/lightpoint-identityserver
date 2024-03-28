@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Components.Forms;
+@typeparam TModel where TModel : class, new()
+
+<FormContent TModel="TModel" Model="Model" ModelChanged="ModelChangedHandle"
+            @ref="FormContentRef"
+             Layout="@Layout"
+             WrapperColSpan="WrapperColSpan"
+             LabelColSpan="LabelColSpan"
+             LabelAlign="LabelAlign"
+             FormItemConfigs="FormItemConfigs">
+    @{
+        if (ChildContent != null)
+        {
+            @ChildContent(new FormItemSlotModel<TModel>() { FormItemConfig = context.FormItemConfig, Model = context.Model })
+        }
+    }
+</FormContent>
+
+@{
+    if (!ReadOnly)
+    {
+        if (Operation != null)
+        {
+            @Operation
+        }
+        else
+        {
+            <div class="flex-box">
+                <div></div>
+                <div>
+                    <Space>
+                        <SpaceItem>
+                            <Button Type="@ButtonType.Primary" OnClick="Submit">提交</Button>
+                        </SpaceItem>
+                    </Space>
+                </div>
+            </div>
+        }
+    }
+    
+}

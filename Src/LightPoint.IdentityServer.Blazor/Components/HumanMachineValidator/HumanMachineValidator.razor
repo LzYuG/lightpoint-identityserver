@@ -1,0 +1,72 @@
+﻿
+
+
+<div>
+    @{
+        if (HasErrorState)
+        {
+            <Alert Style="margin-bottom: 2vh" Message="校验失败，请重试" Type="@AlertType.Error" />
+        }
+    }
+    @{
+        if (VerifyCode != null)
+        {
+            <Flex Align="center">
+                <div style="width: 39%; padding-right: 1%">
+                    <img src="@VerifyCode!.ImageBase64Str" style="width: 100%" />
+                </div>
+                <div style="width: 60%;">
+                    <p style="cursor: pointer; color: #1890FF; margin-top: 20px; width: 7em" @onclick="()=> Refresh()">看不清？换一张</p>
+                </div>
+            </Flex>
+
+            <div>
+                <AntDesign.Input Placeholder="验证码" @bind-Value="@InputCode" Size="@InputSize.Large" Style="width: 100%">
+                    <Suffix>
+                        <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="@Submit"></Button>
+                    </Suffix>
+                </AntDesign.Input>
+            </div>
+        }
+
+        if (VerifyImage != null)
+        {
+            <div style="position: relative">
+                <div style="width: 250px; height: 150px; background-image: url(@VerifyImage!.GapImage); background-size: 100% 100%"></div>
+                <div style="width: 52px; height: 52px; background-size: 100% 100%; border: 2px dashed #E8F0FE; position: absolute; top: @(VerifyImage.GapY - 1 + "px"); left: @(SliderValue + 24 + "px");background-image: url(@VerifyImage!.SliderImage); "></div>
+                <div style="position: absolute; top: 125px; width: 100%">
+                    <input type="range" min="0" max="250"
+                           onmousedown="(event)=>event.preventDefault();" value="@SliderValue" @onchange="StopUpdateSliderValue" @oninput="UpdateSliderValue" />
+                </div>
+               
+            </div>
+            
+        }
+    }
+
+</div>
+
+<style>
+
+    input[type=range] {
+        -webkit-appearance: none; /* 移除默认样式 */
+        width: 100%; /* 宽度设置为100% */
+        background: transparent; /* 背景设置为透明 */
+    }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; /* 移除默认样式 */
+            height: 15px; /* 设置滑块的高度 */
+            width: 15px; /* 设置滑块的宽度 */
+            border-radius: 50%; /* 设置滑块为圆形 */
+            background: #1890FF; /* 设置滑块的颜色 */
+            cursor: pointer; /* 设置鼠标指针为手形 */
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; /* 设置轨道的宽度 */
+            height: 0px; /* 设置轨道的高度 */
+            cursor: pointer; /* 设置鼠标指针为手形 */
+        }
+
+</style>

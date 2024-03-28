@@ -1,0 +1,33 @@
+﻿@using LightPoint.IdentityServer.DtoServices.DtoInfrastructure.Confidential
+@{
+    if (Value != null && Value!.StartsWith(ConfidentialConstants.EncryptedPreString))
+    {
+        <AntDesign.Input Value="@("已加密")" Disabled Placeholder="@Placeholder" Size="@Size" >
+            <AddOnAfter>
+                 <div style="cursor: pointer" @onclick='async ()=>{ Value = ""; await ValueChanged.InvokeAsync(""); StateHasChanged(); }'>
+                     重置
+                </div>
+            </AddOnAfter>
+        </AntDesign.Input>
+    }
+    else
+    {
+        <InputPassword Value="@(Value)" AutoComplete="@false" ValueChanged="@(async (val)=>{
+            Value = val;
+            await ValueChanged.InvokeAsync(val);
+            StateHasChanged();
+        })" Placeholder="@Placeholder" Size="@Size" />
+    }
+}
+
+
+@code {
+    [Parameter]
+    public string? Value{ get; set; }
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+    [Parameter]
+    public string? Placeholder { get; set; }
+    [Parameter]
+    public string? Size { get; set; }
+}

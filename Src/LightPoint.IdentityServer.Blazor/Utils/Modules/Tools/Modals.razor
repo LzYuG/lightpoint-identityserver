@@ -1,0 +1,34 @@
+﻿
+@code {
+
+    public ModalService? ModalService{ get; set; }
+
+    public void ConfirmModal(string title, string content,
+        Func<Task> onOk, Func<Task>? onCancel = null)
+    {
+        RenderFragment icon =@<Icon Type="exclamation-circle" Theme="outline"></Icon>;
+
+        if(onCancel == null)
+        {
+            ModalService!.Confirm(new ConfirmOptions()
+                {
+                    Title = title,
+                    Icon = icon,
+                    Content = content,
+                    OnOk = async (args) => await onOk()
+                });
+        }
+        else
+        {
+            ModalService!.Confirm(new ConfirmOptions()
+                {
+                    Title = title,
+                    Icon = icon,
+                    Content = content,
+                    OnOk = async (args) => await onOk(),
+                    OnCancel = async (args) => await onCancel()
+                });
+        }
+    }
+
+}

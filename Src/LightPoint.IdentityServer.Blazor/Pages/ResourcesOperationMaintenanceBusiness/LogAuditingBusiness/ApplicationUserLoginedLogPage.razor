@@ -1,0 +1,78 @@
+﻿@page "/LogAuditingBusiness/ApplicationUserLoginedLog"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM04.LogAuditingResources
+@using LightPoint.IdentityServer.DtoModels.DM04.LogAuditingResources
+@inherits PageBase<Guid, ApplicationUserLoginedLog, ApplicationUserLoginedLogDM, ApplicationUserLoginedLogDM>
+
+<CardBox Title="用户登录日志">
+    <Tools>
+        <Space>
+            <SpaceItem><RangePicker @bind-Value="DateTimeSearchParams" ShowTime='@("HH:mm")' OnChange="@((DateRangeChangedEventArgs<DateTime?[]> args) => Search())" /></SpaceItem>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="ApplicationUserLoginedLogDM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="ApplicationUserLoginedLogDM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">详情</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm ReadOnly TModel="ApplicationUserLoginedLogDM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs">
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+ @code {
+
+    private DateTime?[] DateTimeSearchParams = new DateTime?[2] { DateTime.Now.Date, DateTime.Now };
+
+    public override TableParameters<ApplicationUserLoginedLogDM> TableParameters { get; set; } = new TableParameters<ApplicationUserLoginedLogDM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.CreateTime), Header = "产生时间", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.ApplicationUserName), Header = "关联的用户", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.InputUserName), Header = "输入的账号", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.InputPassword), Header = "输入的密码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.RemoteIP), Header = "登录地址", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.Remark), Header = "备注", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserLoginedLogDM.IsSuccess), Header = "是否成功", Sortable = true},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "Id", Placeholder = "Id", Prop = nameof(ApplicationUserLoginedLogDM.Id)},
+        new FormItemConfig(){ FormItemType = FormItemType.日期时间选择器, Label = "产生时间", Placeholder = "产生时间", Prop = nameof(ApplicationUserLoginedLogDM.CreateTime)},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "关联的用户", Placeholder = "关联的用户", Prop = nameof(ApplicationUserLoginedLogDM.ApplicationUserName)},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "输入的账号", Placeholder = "输入的账号", Prop = nameof(ApplicationUserLoginedLogDM.InputUserName) },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "输入的密码", Placeholder = "输入的密码", Prop = nameof(ApplicationUserLoginedLogDM.InputPassword) },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "登录地址", Placeholder = "登录地址", Prop = nameof(ApplicationUserLoginedLogDM.RemoteIP) },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否成功", Placeholder = "是否成功", Prop = nameof(ApplicationUserLoginedLogDM.IsSuccess) },
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "备注", Prop = nameof(ApplicationUserLoginedLogDM.Remark) },
+    };
+
+    public override Expression<Func<ApplicationUserLoginedLog, bool>> MontageSearchExpression(TableParameters<ApplicationUserLoginedLogDM> TableParameters)
+    {
+        if (DateTimeSearchParams.Length == 2 && DateTimeSearchParams[0] != null && DateTimeSearchParams[1] != null)
+        {
+            return x => x.CreateTime.Date >= DateTimeSearchParams[0] && x.CreateTime <= DateTimeSearchParams[1];
+        }
+        return null!;
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

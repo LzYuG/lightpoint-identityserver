@@ -1,0 +1,434 @@
+﻿@page "/SystemResourcesBusiness/SystemGlobalConfig"
+@using LightPoint.IdentityServer.Shared.BusinessEnums.BE01.SystemResources
+
+<CardBox Title="全局配置">
+    <Content>
+        <div style="padding-top: 20px">
+            <div class="config-item-box1">
+                <Flex>
+                    <div class="left-tag"></div>
+                    <p class="title">
+                        基础配置
+                    </p>
+                </Flex>
+
+                <div>
+                    @{
+                        if (ServerCommonConfig != null)
+                        {
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许用户自行重置密码</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableUserSelfResetPassword" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许使用邮箱验证码重置密码</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableResetPasswordByEmail" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许使用手机验证码重置密码</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableResetPasswordByPhone" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许使用手机号码（验证码）登录</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableLoginWithPhoneNumber" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许使用邮箱（验证码）登录</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableLoginWithEmail" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许登录的时候选择记住我的登录（长效登录）</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.AllowRemenberme" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">启用人机校验功能</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableHumanMachineVerification" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">启用人机校验功能</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.EnableHumanMachineVerification" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">登出后是否自动回调</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.AutoRedirectWhenLogouted" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">是否自动清除日志</p>
+                                    <Switch @bind-Checked="ServerCommonConfig.IsAutoClearLogs" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                 <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">日志保存天数</p>
+                                    <AntDesign.InputNumber @bind-Value="ServerCommonConfig.LogsSaveDays" Min="1" Max="@(365 * 100)" DefaultValue="@ServerCommonConfig.LogsSaveDays"></AntDesign.InputNumber>
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">人机校验类型</p>
+                                    <Select DataSource="@(Enum.GetValues<HumanMachineVerificationType>().Select(x=> new LightPointSelectOption(){ Value = x, Label = x.ToString()}))"
+                                            TItem="LightPointSelectOption"
+                                            TItemValue="HumanMachineVerificationType"
+                                            @bind-Value="@ServerCommonConfig.HumanMachineVerificationType"
+                                            DefaultValue="@ServerCommonConfig.HumanMachineVerificationType"
+                                            ValueProperty="c=>(HumanMachineVerificationType)c.Value!"
+                                            LabelProperty="c=>c.Label">
+                                    </Select>
+                                </GridCol>
+                            </GridRow>
+
+                            <Button OnClick="@UpdateServerCommonConfig" Style="margin-top: 20px" Type="@ButtonType.Primary">保存修改</Button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="config-item-box2">
+                <Flex>
+                    <div class="left-tag"></div>
+                    <p class="title">
+                        账号配置
+                    </p>
+                </Flex>
+
+                <div>
+                    @{
+                        if (SystemAccountConfig != null)
+                        {
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">允许用户自注册</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.SelfRegisterEnabled" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">注册的时候强制校验手机号码</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.ValidationPhoneNumberWhenRegister" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">注册的时候强制校验邮箱</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.ValidationEmailWhenRegister" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">是否需要管理员审核</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.RequireAdminExamine" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="6">
+                                <p class="form-label">是否强制绑定手机号码</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.MustConfirmPhoneNumber" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">是否强制绑定邮箱</p>
+                                    <Switch @bind-Checked="SystemAccountConfig.MustConfirmEmail" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">全局MFA策略</p>
+                                    <Select DataSource="@(Enum.GetValues<SystemAccountConfigMFAPolicy>().Select(x=> new LightPointSelectOption(){ Value = x, Label = x.ToString()}))"
+                                            TItem="LightPointSelectOption"
+                                            TItemValue="SystemAccountConfigMFAPolicy"
+                                            @bind-Value="@SystemAccountConfig.SystemAccountConfigMFAPolicy"
+                                            DefaultValue="@SystemAccountConfig.SystemAccountConfigMFAPolicy"
+                                            ValueProperty="c=>(SystemAccountConfigMFAPolicy)c.Value!"
+                                            LabelProperty="c=>c.Label">
+                                    </Select>
+                                </GridCol>
+
+                                 <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">最大登录失败次数</p>
+                                    <AntDesign.InputNumber @bind-Value="SystemAccountConfig.MaxLoginFailCount" Min="1" Max="20" DefaultValue="@SystemAccountConfig.MaxLoginFailCount"></AntDesign.InputNumber>
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">超过最大登录次数锁定时间（秒）</p>
+                                    <AntDesign.InputNumber @bind-Value="SystemAccountConfig.LockAccountTime" Min="1" Max="@(60 * 60 * 24 * 365)" DefaultValue="@SystemAccountConfig.LockAccountTime"></AntDesign.InputNumber>
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">用户名校验的正则表达式</p>
+                                    <Input @bind-Value="@SystemAccountConfig.AccountUserNameValidationRegex" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">用户名校验失败后提示信息</p>
+                                    <Input @bind-Value="@SystemAccountConfig.AccountUserNameValidateFailedMessage" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">密码校验的正则表达式</p>
+                                    <Input @bind-Value="@SystemAccountConfig.AccountUserPasswordValidationRegex" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">密码校验失败后提示信息</p>
+                                    <Input @bind-Value="@SystemAccountConfig.AccountUserPasswordValidateFailedMessage" />
+                                </GridCol>
+                            </GridRow>
+
+                            <Button OnClick="@UpdateSystemAccountConfig" Style="margin-top: 20px" Type="@ButtonType.Primary">保存修改</Button>
+                        }
+                    }
+                </div>
+            </div>
+
+
+            <div class="config-item-box1">
+                <Flex>
+                    <div class="left-tag"></div>
+                    <p class="title">
+                        邮件配置
+                    </p>
+
+                   
+                    
+                </Flex>
+
+                <div>
+                    @{
+                        if (ServerEmailConfig != null)
+                        {
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱服务类型</p>
+                                    <Input @bind-Value="@ServerEmailConfig.PlatformType" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱服务账号</p>
+                                    <Input @bind-Value="@ServerEmailConfig.Account" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱服务密码</p>
+                                    <ConfidentialInput @bind-Value="@ServerEmailConfig.Password" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱服务Host</p>
+                                    <Input @bind-Value="@ServerEmailConfig.SMTPServerHost" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱服务端口</p>
+                                    <Input @bind-Value="@ServerEmailConfig.SMTPServerPort" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱发送人</p>
+                                    <Input @bind-Value="@ServerEmailConfig.FromName" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">邮箱发送地址</p>
+                                    <Input @bind-Value="@ServerEmailConfig.From" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">回复人</p>
+                                    <Input @bind-Value="@ServerEmailConfig.ReplyToName" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">回复账号</p>
+                                    <Input @bind-Value="@ServerEmailConfig.ReplyTo" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">发送邮件的客户端名称</p>
+                                    <Input @bind-Value="@ServerEmailConfig.EmailClientName" />
+                                </GridCol>
+                                 <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">开启每日发送上限</p>
+                                    <Switch @bind-Checked="ServerEmailConfig.EnableDailySendLimit" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">同IP每日发送的上限</p>
+                                    <Input @bind-Value="@ServerEmailConfig.DailySendLimitWithSameIP" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">同IP同号码每日发送的上限</p>
+                                    <Input @bind-Value="@ServerEmailConfig.DailySendLimitWithSameIPAndEmail" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">是否启用</p>
+                                    <Switch @bind-Checked="ServerEmailConfig.IsEnable" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">邮箱号码校验的正则表达式</p>
+                                    <Input @bind-Value="@ServerEmailConfig.EmailValidationRegex" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">邮箱号码校验失败后提示信息</p>
+                                    <Input @bind-Value="@ServerEmailConfig.EmailValidateFailedMessage" />
+                                </GridCol>
+                            </GridRow>
+
+                            <Divider Orientation="left" Plain Style="font-weight:bold">以下配置是发送邮箱验证码时候的配置项目</Divider>
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">验证码邮件主题</p>
+                                    <Input @bind-Value="@ServerEmailConfig.ValidationCodeSubject" />
+                                </GridCol>
+                                
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">验证码邮件模板路径</p>
+                                    <Input @bind-Value="@ServerEmailConfig.ValidationCodeTemplatePath" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="24">
+                                    <p class="form-label">验证码邮件模板</p>
+                                    <TextArea MinRows="4" @bind-Value="@ServerEmailConfig.ValidationCodeTemplate" />
+                                </GridCol>
+                            </GridRow>
+
+
+                            <Button OnClick="@UpdateServerEmailConfig" Style="margin-top: 20px" Type="@ButtonType.Primary">保存修改</Button>
+                        }
+                        else
+                        {
+                            <Button OnClick="@InitServerEmailConfig" Type="@ButtonType.Primary">初始化邮件配置</Button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="config-item-box2">
+                <Flex>
+                    <div class="left-tag"></div>
+                    <p class="title">
+                        短信服务配置
+                    </p>
+
+                   
+                </Flex>
+
+                <div>
+                    @{
+                        if (ServerShortMessageServiceConfig != null)
+                        {
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信服务平台类型</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.PlatformType" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信服务平台账号</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.SMSAccount" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信服务平台密码</p>
+                                    <ConfidentialInput @bind-Value="@ServerShortMessageServiceConfig.SMSPassword" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信服务平台Host</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.SMSHost" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信服务平台端口</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.SMSPort" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">开启每日发送上限</p>
+                                    <Switch @bind-Checked="ServerShortMessageServiceConfig.EnableDailySendLimit" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">同IP每日发送的上限</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.DailySendLimitWithSameIP" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">同IP同号码每日发送的上限</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.DailySendLimitWithSameIPAndPhone" />
+                                </GridCol>
+                                
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">是否启用</p>
+                                    <Switch @bind-Checked="ServerShortMessageServiceConfig.IsEnable" CheckedChildren="是" UnCheckedChildren="否" />
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                </GridCol>
+
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">手机号校验的正则表达式</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.PhoneNumberValidationRegex" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">手机号校验失败后提示信息</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.PhoneNumberValidateFailedMessage" />
+                                </GridCol>
+                            </GridRow>
+                            <Divider Orientation="left" Plain Style="font-weight:bold">以下配置是发送短信验证码时候的配置项目</Divider>
+                            <GridRow Gutter="16">
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信模板Id</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.ValidationCodeTemplateId" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="6">
+                                    <p class="form-label">短信验证码签名</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.ValidationCodeSignName" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="12">
+                                    <p class="form-label">短信验证码参数填充值，如{ code : "666666" } => { code : {CODE} }</p>
+                                    <Input @bind-Value="@ServerShortMessageServiceConfig.ValidationCodeValueParam" />
+                                </GridCol>
+                                <GridCol Class="gutter-row" Span="24">
+                                    <p class="form-label">短信模板示例</p>
+                                     <TextArea MinRows="4" @bind-Value="@ServerShortMessageServiceConfig.ValidationCodeTemplate" />
+                                </GridCol>
+                            </GridRow>
+
+                            <Button OnClick="@UpdateServerShortMessageServiceConfig" Style="margin-top: 20px" Type="@ButtonType.Primary">保存修改</Button>
+                        }
+                        else
+                        {
+                            <Button OnClick="@InitServerShortMessageServiceConfig" Type="@ButtonType.Primary">初始化短信服务配置</Button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="config-item-box1">
+                <Flex>
+                    <div class="left-tag"></div>
+                    <p class="title">
+                        一些工具
+                    </p>
+
+
+                </Flex>
+
+                <div>
+                    @{
+                        <Divider Orientation="left" Plain Style="font-weight:bold">生成AES算法所需的随机密钥</Divider>
+                        <Button OnClick="@(() => CreateAesPassword(16))" Type="@ButtonType.Primary">128位</Button>
+                        <Button OnClick="@(() => CreateAesPassword(24))" Type="@ButtonType.Primary">192位</Button>
+                        <Button OnClick="@(() => CreateAesPassword(32))" Type="@ButtonType.Primary">256位</Button>
+
+                        <TextArea MinRows="4" @bind-Value="@_AesPassword" Style="margin-top: 20px"/>
+                    }
+                </div>
+            </div>
+        </div>
+    </Content>
+</CardBox>
+
+
+
+<style>
+    .config-item-box1{
+        padding: 20px;
+    }
+
+    .config-item-box2 {
+        padding: 20px;
+        background-color: #FAFAFA;
+    }
+    .left-tag{
+        width: 4px;
+        height: 20px;
+        background-color: #1890FF;
+    }
+
+    .title{
+        font-size: 16px;
+        font-weight: bold;
+        line-height: 20px;
+        padding-left: .5em;
+    }
+
+    .form-label{
+        margin-top: 10px;
+    }
+</style>

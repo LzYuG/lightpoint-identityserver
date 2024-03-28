@@ -1,0 +1,17 @@
+﻿<Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="@(new []{typeof(UseBlazorInfrastructure).Assembly})">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(AppMain)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>页面不存在</PageTitle>
+        <LayoutView Layout="@typeof(EmptyLayout)">
+            <NotFound />
+        </LayoutView>
+    </NotFound>
+</Router>
+
+
+<AntContainer />
+
+

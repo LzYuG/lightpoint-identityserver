@@ -1,0 +1,34 @@
+﻿@page "/Home/Error"
+@model LightPoint.IdentityServer.QuickStart.Server.IdentityServer4.Pages.Home.ErrorModel
+
+<div class="error-page" style="width: 60%;margin: 0 auto;display: flex; justify-content: center;flex-direction: column; height: 40vh">
+    <div style="background-color: #FFF2F0;padding: 20px">
+        @if (Model.ErrorViewModel!.Error != null)
+        {
+            <p style="font-weight:bold; font-size: 24px; word-wrap: anywhere">
+                @Model.ErrorViewModel!.Error
+            </p>
+
+            if (Model.ErrorViewModel!.Error.ErrorDescription != null)
+            {
+                <p>@Model.ErrorViewModel!.Error.ErrorDescription</p>
+            }
+        }
+
+        @if (@Model.ErrorViewModel?.Error?.RequestId != null)
+        {
+            <p class="request-id">请求Id: @Model.ErrorViewModel!.Error.RequestId</p>
+        }
+    </div>
+</div>
+
+<style>
+    @@font-face {
+        font-family: common-font;
+        src: url(/_content/LightPoint.IdentityServer.Blazor/fonts/AlibabaPuHuiTi-2-55-Regular.ttf);
+    }
+    
+    p, span, div, a {
+        font-family: common-font;
+    }
+</style>

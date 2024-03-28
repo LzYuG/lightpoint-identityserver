@@ -1,0 +1,117 @@
+﻿@page "/Account/Register"
+@layout EmptyLayout
+@inherits GlobalConfigPageBase
+
+
+<IdentityServerBusinessTemplate IdentityServerBusinessTemplatePageParams="IdentityServerBusinessTemplatePageParams">
+    @{
+        if (this.CurrentSystemAccountConfig != null)
+        {
+            <div style="width: 70%; margin: 0 auto;">
+                @{
+                    foreach (var error in Errors)
+                    {
+                        <Alert Style="margin-bottom: 2vh" Message="@error" Type="@AlertType.Error" />
+                    }
+                }
+
+
+                <p style="font-size: 24px; margin-bottom: 0">欢迎使用，请注册</p>
+
+                <div style="max-height: 60vh; overflow-y: scroll">
+                    <div style="margin-top: 2vh">
+                        <AntDesign.Input Placeholder="请输入用户昵称" @bind-Value="@RegisterModel.Name" Size="@InputSize.Large">
+                            <Prefix>
+                                <Icon Type="user" Theme="outline" />
+                            </Prefix>
+                        </AntDesign.Input>
+                    </div>
+                    <div class="item-margin">
+                        <AntDesign.Input Placeholder="请输入登录名" @bind-Value="@RegisterModel.UserName" Size="@InputSize.Large">
+                            <Prefix>
+                                <Icon Type="user" Theme="outline" />
+                            </Prefix>
+                        </AntDesign.Input>
+                    </div>
+                    @{
+                        if (this.CurrentSystemAccountConfig.ValidationEmailWhenRegister)
+                        {
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入手机号" @bind-Value="@RegisterModel.PhoneNumber" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="user" Theme="outline" />
+                                    </Prefix>
+                                </AntDesign.Input>
+                            </div>
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入短信验证码" @bind-Value="@RegisterModel.ShortMessageCode" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="lock" Theme="outline" />
+                                    </Prefix>
+                                    <Suffix>
+                                        <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">获取验证码</HumanMachineValidateOperationButton>
+                                    </Suffix>
+                                </AntDesign.Input>
+                            </div>
+                        }
+                    }
+
+                    @{
+                        if (this.CurrentSystemAccountConfig.ValidationEmailWhenRegister)
+                        {
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入账号绑定的邮箱" @bind-Value="@RegisterModel.Email" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="user" Theme="outline" />
+                                    </Prefix>
+                                </AntDesign.Input>
+                            </div>
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入邮箱验证码" @bind-Value="@RegisterModel.Email" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="lock" Theme="outline" />
+                                    </Prefix>
+                                    <Suffix>
+                                        <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">获取验证码</HumanMachineValidateOperationButton>
+                                    </Suffix>
+                                </AntDesign.Input>
+                            </div>
+                        }
+                    }
+
+                    <div class="item-margin">
+                        <AntDesign.InputPassword @bind-Value="@RegisterModel.NewPassword"
+                                                 Placeholder="请输入新密码"
+                                                 Size="@InputSize.Large">
+                            <Prefix>
+                                <Icon Type="lock" Theme="outline" />
+                            </Prefix>
+                        </AntDesign.InputPassword>
+                    </div>
+                    <div class="item-margin">
+                        <AntDesign.InputPassword @bind-Value="@RegisterModel.NewPasswordConfirm"
+                                                 Placeholder="再输入一次新密码确认"
+                                                 Size="@InputSize.Large">
+                            <Prefix>
+                                <Icon Type="lock" Theme="outline" />
+                            </Prefix>
+                        </AntDesign.InputPassword>
+                    </div>
+                </div>
+
+
+
+                <div class="item-margin">
+                    <Flex Justify="space-between" Style="width: 100%">
+                        <Button OnClick="@Cancel" Type="@ButtonType.Default" Size="@ButtonSize.Large" Style="width: 48%">取消</Button>
+                        <Button OnClick="@RegisterSubmit" Type="@ButtonType.Primary" Size="@ButtonSize.Large" Style="width: 48%">提交</Button>
+                    </Flex>
+
+                </div>
+
+            </div>
+        }
+    }
+     
+   
+</IdentityServerBusinessTemplate>

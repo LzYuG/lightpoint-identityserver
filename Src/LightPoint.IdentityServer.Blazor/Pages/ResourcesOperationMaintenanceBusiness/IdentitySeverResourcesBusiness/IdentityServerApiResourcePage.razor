@@ -1,0 +1,191 @@
+﻿@page "/IdentitySeverResourcesBusiness/IdentityServerApiResource"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM03.IdentityServerResources.ApiResource;
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.ApiResource;
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.ApiScope;
+@using LightPoint.IdentityServer.DtoModels.Tools.Mappers
+@using LightPoint.IdentityServer.Shared.Helpers
+@inherits PageBase<Guid, IdentityServerApiResource, IdentityServerApiResourceDQM, IdentityServerApiResourceDCM, IIdentityServerApiResourceService>
+
+<CardBox Title="IdentityServerApiResource">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="IdentityServerApiResourceDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="IdentityServerApiResourceDQM" Name="Scopes">
+                @(string.Join(",", context.Model.Scopes))
+             </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerApiResourceDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm TModel="IdentityServerApiResourceDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+             <FormItemSlot TModel="IdentityServerApiResourceDCM" Name="Secrets">
+                 @{
+                    <Space Style="min-width: 100%; max-width: 100%; flex-wrap: wrap;">
+                        @{
+                            if (context.Model.Secrets != null)
+                            {
+                                for (var i = 0; i < context.Model.Secrets.Count; i++)
+                                {
+                                    var tempModel = context.Model.Secrets[i];
+                                    bool editable = true;
+                                    if (context.Model.Secrets[i].IsPersistence)
+                                    {
+                                        editable = false;
+                                    }
+                                    var index = i;
+                                    <SpaceItem Style="width: 100%; padding-top: 10px">
+                                        <Space Style="width:100%">
+                                            <SpaceItem Style="width:30%">
+                                                <Select DataSource="@_SecretTypeOptions"
+                                                        TItem="LightPointSelectOption"
+                                                        TItemValue="string"
+                                                        Disabled="!editable"
+                                                        @bind-Value="@(tempModel.LightPointSecretType)"
+                                                        DefaultValue="@tempModel.LightPointSecretType"
+                                                        ValueProperty="c=>c.Value!.ToString()"
+                                                        Placeholder="选择密钥的类型"
+                                                        LabelProperty="c=>c.Label"
+                                                        Style="width:100%">
+                                                </Select>
+                                            </SpaceItem>
+                                            <SpaceItem Style="width:68%">
+                                                <AntDesign.Input TValue="string" Placeholder="输入密钥值" Value="@(tempModel.Value)" ValueChanged="(string val)=>{
+                                                tempModel.Value = val;
+                                                context.Model.Secrets[index].Value = val;
+                                                 StateHasChanged();
+                                            }" Style="width: 100%;" Disabled="!editable">
+                                                    <Suffix>
+                                                        <Icon Type="delete" Style="color: red; cursor: pointer;font-size: 24px" Theme="outline"
+                                                              OnClick="async () => {
+                                                            context.Model.Secrets.RemoveAt(index);
+                                                            StateHasChanged();
+                                                        }" />
+                                                    </Suffix>
+                                                </AntDesign.Input>
+                                            </SpaceItem>
+                                        </Space>
+
+
+                                    </SpaceItem>
+                                }
+                            }
+                        }
+                        <SpaceItem Style="padding-top: 10px">
+                            <Icon Type="file-add" Theme="outline" Style="cursor: pointer;font-size: 24px;" OnClick="() => _AddClientSecrets(context.Model)" />
+                        </SpaceItem>
+                    </Space>
+                }
+            </FormItemSlot>
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+@code {
+
+    [Inject]
+    public IIdentityServerApiScopeService? ApiScopeService { get; set; }
+
+    public List<IdentityServerApiScopeDQM>? IdentityServerApiScopes { get; set; }
+
+    public override TableParameters<IdentityServerApiResourceDQM> TableParameters { get; set; } = new TableParameters<IdentityServerApiResourceDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiResourceDQM.Name), Header = "名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiResourceDQM.DisplayName), Header = "显示名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiResourceDQM.SortCode), Header = "排序码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiResourceDQM.Scopes), Header = "Scopes", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiResourceDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名称", Placeholder = "请输入名称", Prop = "Name", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "显示名称", Placeholder = "请输入显示名称", Prop = "DisplayName", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(IdentityServerApiResourceDCM.SortCode), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否启用", Placeholder = "是否启用", Prop = nameof(IdentityServerApiResourceDCM.Enabled) },
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "Scopes", Placeholder = "请填写支持的Scope，每个scope之间使用英文逗号分隔", Prop = nameof(IdentityServerApiResourceDCM.ScopesFormValueHelper) },
+        new FormItemConfig(){ FormItemType = FormItemType.自定义组件, Label = "Secrets", Placeholder = "请输入Secrets", Prop = nameof(IdentityServerApiResourceDCM.Secrets), Span = 24},
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(IdentityServerApiResourceDCM.Description) },
+    };
+
+    private List<LightPointSelectOption> _SecretTypeOptions = new List<LightPointSelectOption>()
+        {
+            new LightPointSelectOption() { Label = "SharedSecret", Value = IdentityServerResourcesConstants.SecretTypes.SharedSecret},
+            new LightPointSelectOption() { Label = "X509CertificateBase64", Value = IdentityServerResourcesConstants.SecretTypes.X509CertificateBase64},
+            new LightPointSelectOption() { Label = "X509CertificateThumbprint", Value = IdentityServerResourcesConstants.SecretTypes.X509CertificateThumbprint},
+            new LightPointSelectOption() { Label = "JsonWebKey", Value = IdentityServerResourcesConstants.SecretTypes.JsonWebKey},
+        };
+
+    private void _AddClientSecrets(IdentityServerApiResourceDCM model)
+    {
+        if (model.Secrets == null)
+        {
+            model.Secrets = new List<IdentityServerApiResourceSecretDM>() { new IdentityServerApiResourceSecretDM() };
+        }
+        else
+        {
+            if (model.Secrets!.Any(x => x.Value == ""))
+            {
+                return;
+            }
+            model.Secrets.Add(new IdentityServerApiResourceSecretDM());
+        }
+    }
+
+
+    public override async Task OpenForm(IdentityServerApiResourceDQM? queryDto)
+    {
+        await Task.Run(() =>
+        {
+            if (this.LightPointFormRef == null)
+            {
+                return;
+            }
+            if (queryDto != null)
+            {
+                var dcm = Mapper<IdentityServerApiResourceDQM, IdentityServerApiResourceDCM>.MapToNewObj(queryDto);
+                dcm!.ScopesFormValueHelper = string.Join(",", dcm.Scopes);
+                this.LightPointFormRef.Open(dcm);
+            }
+            else
+            {
+                this.LightPointFormRef.Open();
+            }
+        });
+
+    }
+
+    public override Task Update(IdentityServerApiResourceDCM commandDtoBase)
+    {
+        if(commandDtoBase.ScopesFormValueHelper != null)
+        {
+            commandDtoBase.Scopes = commandDtoBase.ScopesFormValueHelper.Split(",").Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        }
+        return base.Update(commandDtoBase);
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

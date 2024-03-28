@@ -1,0 +1,393 @@
+﻿@using Hangfire
+@using LightPoint.IdentityServer.Domain.DomainModels.DM04.LogAuditingResources
+@using LightPoint.IdentityServer.DtoModels.DM01.SystemResource
+@using LightPoint.IdentityServer.DtoModels.DM02.ApplicationIdentityResources
+@using LightPoint.IdentityServer.DtoModels.DM04.LogAuditingResources
+@using LightPoint.IdentityServer.DtoServices.DtoInfrastructure.Confidential
+@using LightPoint.IdentityServer.ServerInfrastructure.Cache
+@using LightPoint.IdentityServer.ServerInfrastructure.Email
+@using LightPoint.IdentityServer.ServerInfrastructure.Middlewares.MutilTenant
+@using LightPoint.IdentityServer.ServerInfrastructure.SMS
+@using LightPoint.IdentityServer.ServerInfrastructure.Security.MFA.GoogleAuthenticator
+@using LightPoint.IdentityServer.ServerInfrastructure.ValidationCode
+@using LightPoint.IdentityServer.Shared.BusinessEnums.BE02.ApplicationIdentityResources
+@using System.Text.RegularExpressions
+
+@{
+    if (ApplicationUser != null)
+    {
+        <div>
+            <p style="font-size: 24px">@(ApplicationUser!.MutilFactorEnabled ? "MFA多因子认证" : "2FA双因子认证")</p>
+            @{
+                var totpValidateMFA = ApplicationUser!.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == IdentityServer.Shared.BusinessEnums.BE02.ApplicationIdentityResources.ApplicationUserMultiFactorAuthenticationType.时间型动态令牌 && x.IsEnable);
+                var shortMessageValidateMFA = ApplicationUser.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == IdentityServer.Shared.BusinessEnums.BE02.ApplicationIdentityResources.ApplicationUserMultiFactorAuthenticationType.短信验证码 && x.IsEnable);
+                var emailValidateMFA = ApplicationUser.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == IdentityServer.Shared.BusinessEnums.BE02.ApplicationIdentityResources.ApplicationUserMultiFactorAuthenticationType.邮箱验证码 && x.IsEnable);
+            }
+            <Tabs Draggable @bind-ActiveKey="TabActiveKey">
+                 @{
+                    if (totpValidateMFA != null && !ComplateValidateTypes.Any(x => x == ApplicationUserMultiFactorAuthenticationType.时间型动态令牌))
+                    {
+                        <TabPane Tab="时间型动态令牌" Key="0">
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入时间型动态令牌" @bind-Value="@TOTPCode" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="lock" Theme="outline" />
+                                    </Prefix>
+                                </AntDesign.Input>
+                            </div>
+                        </TabPane>
+                    }
+                    if (shortMessageValidateMFA != null && !string.IsNullOrWhiteSpace(ApplicationUser.PhoneNumber) && ApplicationUser.PhoneNumberConfirmed && !ComplateValidateTypes.Any(x => x == ApplicationUserMultiFactorAuthenticationType.短信验证码))
+                    {
+                        <TabPane Tab="短信验证码" Key="1">
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入短信验证码" @bind-Value="@ShortMessageValidationCode" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="lock" Theme="outline" />
+                                    </Prefix>
+                                    <Suffix>
+                                        @{
+                                            if (ShortMessageSendingIterval > 0)
+                                            {
+                                                <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(ShortMessageSendingIterval)秒后重新发送</Button>
+                                            }
+                                            else
+                                            {
+                                                <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendMFAValidationByPhoneNumberValidationCodeShortMessage">获取验证码</HumanMachineValidateOperationButton>
+                                            }
+                                        }
+                                    </Suffix>
+                                </AntDesign.Input>
+                            </div>
+                        </TabPane>
+                    }
+                    if (emailValidateMFA != null && !string.IsNullOrWhiteSpace(ApplicationUser.Email) && ApplicationUser.EmailConfirmed && !ComplateValidateTypes.Any(x => x == ApplicationUserMultiFactorAuthenticationType.邮箱验证码))
+                    {
+                        <TabPane Tab="邮箱验证码" Key="2">
+                            <div class="item-margin">
+                                <AntDesign.Input Placeholder="请输入邮箱收到的验证码" @bind-Value="@EmailValidationCode" Size="@InputSize.Large">
+                                    <Prefix>
+                                        <Icon Type="lock" Theme="outline" />
+                                    </Prefix>
+                                    <Suffix>
+                                        @{
+                                            if (EmailSendingIterval > 0)
+                                            {
+                                                <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(EmailSendingIterval)秒后重新发送</Button>
+                                            }
+                                            else
+                                            {
+                                                <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendMFAValidationByEmailValidationCodeEmail">获取验证码</HumanMachineValidateOperationButton>
+                                            }
+                                        }
+                                    </Suffix>
+                                </AntDesign.Input>
+                            </div>
+                        </TabPane>
+                    }
+                }
+            </Tabs>
+            <div class="item-margin">
+                @{
+                    if (ComplateValidateTypes.Count < ApplicationUser.ApplicationUserMultiFactorAuthentications!.Where(x => x.IsEnable).Count())
+                    {
+                        <Button OnClick="@LoginSubmit" Type="@ButtonType.Primary" Size="@ButtonSize.Large" Style="width: 100%">下一步</Button>
+                    }
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public ApplicationUserDQM? ApplicationUser { get; set; }
+    [Parameter]
+    public ServerShortMessageServiceConfigDQM? CurrentServerShortMessageServiceConfig { get; set; }
+    [Parameter]
+    public ServerEmailConfigDQM? CurrentServerEmailConfig { get; set; }
+    [Inject]
+    public TenantInfoAccessor? TenantInfoAccessor { get; set; }
+    [Inject]
+    public IMessageService? MessageService { get; set; }
+
+    private string? TabActiveKey { get; set; }
+
+    private string? TOTPCode { get; set; }
+    private string? EmailValidationCode { get; set; }
+    private string? ShortMessageValidationCode { get; set; }
+
+    private GoogleAuthenticator? GoogleAuthenticator { get; set; }
+    [Inject]
+    public IEmailService? EmailService { get; set; }
+    [Inject]
+    public IShortMessageServerService? ShortMessageServerService { get; set; }
+    [Inject]
+    public ILightPointCache? LightPointCache { get; set; }
+    [Inject]
+    public IValidationCodeCreater? ValidationCodeCreater { get; set; }
+    [Inject]
+    public IAppService<Guid, MessageSendedLog, MessageSendedLogDM, MessageSendedLogDM>? MessageSendedLogService { get; set; }
+    [Inject]
+    public IConfidentialService? ConfidentialService { get; set; }
+
+    public List<ApplicationUserMultiFactorAuthenticationType> ComplateValidateTypes { get; set; } = new List<ApplicationUserMultiFactorAuthenticationType>();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        GoogleAuthenticator = new GoogleAuthenticator(TimeSpan.FromMinutes(1));
+        base.OnAfterRender(firstRender);
+    }
+
+    private async Task LoginSubmit()
+    {
+        if (TabActiveKey == "0")
+        {
+            var mfaData = ApplicationUser!.ApplicationUserMultiFactorAuthentications!.First(x => x.ApplicationUserMultiFactorAuthenticationType == ApplicationUserMultiFactorAuthenticationType.时间型动态令牌);
+            var decryptApplicationUserMultiFactorAuthentication = await ConfidentialService!.DecryptModelConfidentialPropsAsync(mfaData);
+            if (GoogleAuthenticator!.ValidateTwoFactorPIN(decryptApplicationUserMultiFactorAuthentication.FactorValue!, TOTPCode!))
+            {
+                await HandleResult(ApplicationUserMultiFactorAuthenticationType.时间型动态令牌);
+            }
+            else
+            {
+                await MessageService!.Error("验证码错误");
+            }
+        }
+        else if (TabActiveKey == "1")
+        {
+            var validateResult = await ValidationCodeCreater!.ValidateValidationCode("PhoneNumberMFAValidation", ApplicationUser!.PhoneNumber!,
+                ShortMessageValidationCode!);
+            if (validateResult)
+            {
+                await HandleResult(ApplicationUserMultiFactorAuthenticationType.短信验证码);
+            }
+            else
+            {
+                await MessageService!.Error("验证码错误");
+            }
+        }
+        else if (TabActiveKey == "2")
+        {
+            var validateResult = await ValidationCodeCreater!.ValidateValidationCode("EmailMFAValidation", ApplicationUser!.Email!,
+                EmailValidationCode!);
+            if (validateResult)
+            {
+                await HandleResult(ApplicationUserMultiFactorAuthenticationType.邮箱验证码);
+            }
+            else
+            {
+                await MessageService!.Error("验证码错误");
+            }
+        }
+
+
+    }
+    [Parameter]
+    public EventCallback<Tuple<string, ApplicationUserMultiFactorAuthenticationType>> Success { get; set; }
+
+
+    private async Task HandleResult(ApplicationUserMultiFactorAuthenticationType type)
+    {
+        if (ApplicationUser!.MutilFactorEnabled)
+        {
+            ComplateValidateTypes.Add(type);
+            StateHasChanged();
+            if (ComplateValidateTypes.Count == ApplicationUser.ApplicationUserMultiFactorAuthentications!.Where(x => x.IsEnable).Count())
+            {
+                var secret = "";
+                foreach (var applicationUserMultiFactorAuthentication in ApplicationUser.ApplicationUserMultiFactorAuthentications!.Where(x => x.IsEnable).OrderBy(x => x.Id))
+                {
+                    var tempData = await ConfidentialService!.DecryptModelConfidentialPropsAsync(applicationUserMultiFactorAuthentication);
+                    secret += tempData.Secret!;
+                }
+                var totpToken = GoogleAuthenticator!.GetCurrentPINs(secret, TimeSpan.FromSeconds(30));
+                await Success.InvokeAsync(new Tuple<string, ApplicationUserMultiFactorAuthenticationType>(totpToken[0], type));
+            }
+        }
+        else
+        {
+            var tempData = await ConfidentialService!.DecryptModelConfidentialPropsAsync(ApplicationUser.ApplicationUserMultiFactorAuthentications!.First(x => x.ApplicationUserMultiFactorAuthenticationType == type)!);
+            var secret = tempData.Secret!;
+            var totpToken = GoogleAuthenticator!.GetCurrentPINs(secret, TimeSpan.FromSeconds(30));
+            await Success.InvokeAsync(new Tuple<string, ApplicationUserMultiFactorAuthenticationType>(totpToken[0], type));
+        }
+    }
+
+
+    #region 发送验证码辅助方法
+
+    /// <summary>
+    /// 邮件发送间隔
+    /// </summary>
+    public int ShortMessageSendingIterval { get; set; }
+    public Timer? ShortMessageSSendingItervalTimer { get; set; }
+    public int EmailSendingIterval { get; set; }
+    public Timer? EmailSendingItervalTimer { get; set; }
+
+    public async Task SendMFAValidationByPhoneNumberValidationCodeShortMessage()
+    {
+        if (string.IsNullOrWhiteSpace(ApplicationUser!.PhoneNumber) || !ApplicationUser.PhoneNumberConfirmed)
+        {
+            await MessageService!.Error("该账号未绑定手机号码");
+            return;
+        }
+        await SendValidationCodeShortMessage("PhoneNumberMFAValidation", "用于该用户进行MFA校验", ApplicationUser.PhoneNumber!);
+    }
+
+    private async Task SendValidationCodeShortMessage(string operationType, string remark, string phoneNumber)
+    {
+        var pattern = this.CurrentServerShortMessageServiceConfig!.PhoneNumberValidationRegex!;
+        var regex = new Regex(pattern);
+
+        if (phoneNumber == null || !regex.IsMatch(phoneNumber))
+        {
+            await MessageService!.Error("手机号码格式错误");
+            return;
+        }
+
+        ShortMessageSendingIterval = 60;
+        ShortMessageSSendingItervalTimer = new Timer((object? state) => { ShortMessageSendingIterval -= 1; InvokeAsync(StateHasChanged); if (ShortMessageSendingIterval == 0) ShortMessageSSendingItervalTimer?.Dispose(); }, null, 0, 1000);
+
+        var toadySendedShortMessageCountWithSameIPAndPhone = await MessageSendedLogService!.GetApiAmountAsync(x => x.CreateTime.Date == DateTime.Now.Date && x.MessageSendedLogType == IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.短信验证码
+            && x.RemoteIP == TenantInfoAccessor!.CurrentRemoteIP && x.To == phoneNumber);
+
+        if (toadySendedShortMessageCountWithSameIPAndPhone >= this.CurrentServerShortMessageServiceConfig!.DailySendLimitWithSameIPAndPhone)
+        {
+            await MessageService!.Error("超出每日短信发送限制");
+            return;
+        }
+
+        var toadySendedShortMessageCountWithSameIP = await MessageSendedLogService!.GetApiAmountAsync(x => x.CreateTime.Date == DateTime.Now.Date && x.MessageSendedLogType == IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.短信验证码
+            && x.RemoteIP == TenantInfoAccessor!.CurrentRemoteIP);
+
+        if (toadySendedShortMessageCountWithSameIP >= this.CurrentServerShortMessageServiceConfig!.DailySendLimitWithSameIP)
+        {
+            await MessageService!.Error("超出每日短信发送限制");
+            return;
+        }
+
+        var cacheModel = await LightPointCache!.GetItemAsymc<ValidationCodeModel>(ValidationCodeCreater!.CreateValidationCodeCacheKey(operationType, phoneNumber));
+
+        if (cacheModel != null && cacheModel!.CreateTime.AddMinutes(1) > DateTime.Now)
+        {
+            await MessageService!.Error("发送过于频繁，请稍后重试");
+            ShortMessageSendingIterval = (int)(DateTime.Now - cacheModel!.CreateTime).TotalSeconds;
+            StateHasChanged();
+            return;
+        }
+
+        var ctk = new CancellationToken();
+        var codeModel = await ValidationCodeCreater!.CreateValidationCode(operationType, phoneNumber, 6);
+        BackgroundJob.Enqueue(() => ShortMessageServerService!.SendValidationCodeAsync(TenantInfoAccessor!.TenantInfo,
+            new ValidationCodeShortMessageModel()
+                {
+                    RemoteIP = TenantInfoAccessor.CurrentRemoteIP,
+                    To = phoneNumber,
+                    ValidationCode = codeModel.Code
+                },
+            ctk));
+        var content = this.CurrentServerShortMessageServiceConfig.PlatformType + "：短信验证码";
+        if (!string.IsNullOrWhiteSpace(this.CurrentServerShortMessageServiceConfig.ValidationCodeTemplate))
+        {
+            content = this.CurrentServerShortMessageServiceConfig.PlatformType + "：" + this.CurrentServerShortMessageServiceConfig.ValidationCodeTemplate.Replace("{CODE}", codeModel.Code);
+        }
+
+        await MessageService!.Success("短信验证码已发送至该手机号码");
+        await MessageSendedLogService.SetAndSaveEntityData(new MessageSendedLogDM()
+            {
+                CreateTime = DateTime.Now,
+                Id = Guid.NewGuid(),
+                KeyValue1 = codeModel.Code,
+                Remark = remark,
+                MessageContentDescription = content,
+                RemoteIP = TenantInfoAccessor!.CurrentRemoteIP,
+                To = phoneNumber,
+                OperationIdentityId = phoneNumber,
+                OperationIdentityName = "登录手机号码：" + phoneNumber,
+                TenantIdentifier = TenantInfoAccessor.TenantInfo.TenantIdentifier,
+                MessageSendedLogType = IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.短信验证码,
+            });
+    }
+
+    public async Task SendMFAValidationByEmailValidationCodeEmail()
+    {
+        if (string.IsNullOrWhiteSpace(ApplicationUser!.Email) || !ApplicationUser.EmailConfirmed)
+        {
+            await MessageService!.Error("该账号未绑定邮箱");
+            return;
+        }
+        await SendValidationCodeEmail("EmailMFAValidation", $"您正在进行MFA认证操作", "用于该用户进行MFA认证", ApplicationUser.Email!);
+    }
+
+    private async Task SendValidationCodeEmail(string operationType, string operationTypeInEmail, string remark, string email)
+    {
+        var pattern = this.CurrentServerEmailConfig!.EmailValidationRegex!;
+        var regex = new Regex(pattern);
+
+        if (email == null || !regex.IsMatch(email))
+        {
+            await MessageService!.Error("邮箱格式错误");
+            return;
+        }
+
+        EmailSendingIterval = 60;
+        EmailSendingItervalTimer = new Timer((object? state) => { EmailSendingIterval -= 1; InvokeAsync(StateHasChanged); if (EmailSendingIterval == 0) EmailSendingItervalTimer?.Dispose(); }, null, 0, 1000);
+
+        var toadySendedEmailCountWithSameIPAndEmail = await MessageSendedLogService!.GetApiAmountAsync(x => x.CreateTime.Date == DateTime.Now.Date && x.MessageSendedLogType == IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.验证码邮件
+            && x.RemoteIP == TenantInfoAccessor!.CurrentRemoteIP && x.To == email);
+
+        if (toadySendedEmailCountWithSameIPAndEmail >= this.CurrentServerEmailConfig!.DailySendLimitWithSameIPAndEmail)
+        {
+            await MessageService!.Error("超出每日邮件发送限制");
+            return;
+        }
+
+        var toadySendedEmailCountWithSameIP = await MessageSendedLogService!.GetApiAmountAsync(x => x.CreateTime.Date == DateTime.Now.Date && x.MessageSendedLogType == IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.验证码邮件
+            && x.RemoteIP == TenantInfoAccessor!.CurrentRemoteIP);
+
+        if (toadySendedEmailCountWithSameIP >= this.CurrentServerEmailConfig!.DailySendLimitWithSameIP)
+        {
+            await MessageService!.Error("超出每日邮件发送限制");
+            return;
+        }
+
+        var cacheModel = await LightPointCache!.GetItemAsymc<ValidationCodeModel>(ValidationCodeCreater!.CreateValidationCodeCacheKey(operationType, email));
+
+        if (cacheModel != null && cacheModel!.CreateTime.AddMinutes(1) > DateTime.Now)
+        {
+            await MessageService!.Error("发送过于频繁，请稍后重试");
+            EmailSendingIterval = (int)(DateTime.Now - cacheModel!.CreateTime).TotalSeconds;
+            StateHasChanged();
+            return;
+        }
+
+        var ctk = new CancellationToken();
+        var codeModel = await ValidationCodeCreater!.CreateValidationCode(operationType, email, 6);
+        BackgroundJob.Enqueue(() => EmailService!.SendValidationCodeAsync(TenantInfoAccessor!.TenantInfo,
+            new ValidationCodeEmailModel(new List<string>() { email })
+                {
+                    ClientName = "身份认证服务",
+                    Code = codeModel.Code,
+                    RemoteIP = TenantInfoAccessor.CurrentRemoteIP,
+                    OpertionType = operationTypeInEmail,
+                },
+            ctk));
+        await MessageService!.Success("邮件已发送至该邮箱");
+        await MessageSendedLogService.SetAndSaveEntityData(new MessageSendedLogDM()
+            {
+                CreateTime = DateTime.Now,
+                Id = Guid.NewGuid(),
+                Remark = remark,
+                KeyValue1 = codeModel.Code,
+                MessageContentDescription = "邮箱发送的验证码",
+                RemoteIP = TenantInfoAccessor!.CurrentRemoteIP,
+                To = email,
+                OperationIdentityId = email,
+                OperationIdentityName = "登录邮箱：" + email,
+                TenantIdentifier = TenantInfoAccessor.TenantInfo.TenantIdentifier,
+                MessageSendedLogType = IdentityServer.Shared.BusinessEnums.BE04.LogAuditingResources.MessageSendedLogType.验证码邮件,
+            });
+    }
+    #endregion
+}

@@ -1,0 +1,105 @@
+﻿
+
+<Menu Theme="MenuTheme.Light" DefaultSelectedKeys=@(new[]{"1"}) Mode="MenuMode.Inline" OnMenuItemClicked="OnMenuItemClicked">
+    @{
+        for (var i = 0; i < ApplicationMenus.Count; i++)
+        {
+            var menu = ApplicationMenus[i];
+            if(menu.Childrens == null || menu.Childrens.Count == 0)
+            {
+                <MenuItem Key="@menu.Id" RouterLink="@menu.Path" Id="@menu.Id">
+                    <Icon Type="@menu.Icon" Theme="outline" />
+                    <span>@menu.Name</span>
+                </MenuItem>
+            }
+            else
+            {
+                <SubMenu Key="@menu.Id" Title="@menu.Name">
+                    <TitleTemplate>
+                        <Icon Type="@menu.Icon" Theme="outline"></Icon>
+                        <span>@menu.Name</span>
+                    </TitleTemplate>
+                    <ChildContent>
+                        @{
+                            for (var j = 0; j < menu.Childrens.Count; j++)
+                            {
+                                var subMenu = menu.Childrens[j];
+                                <MenuItem Id="@subMenu.Id" Title="@subMenu.Name" Key="@subMenu.Id" RouterLink="@subMenu.Path">@subMenu.Name</MenuItem>
+                            }
+                        }
+                    </ChildContent>
+                    
+                </SubMenu>
+            }
+        }
+    }
+</Menu>
+
+@code{
+    [Inject]
+    public ILayoutInitor? LayoutInitor { get; set; }
+    [Inject]
+    public ILocalStorageService? LocalStorageService{ get; set; }
+
+    public List<ApplicationMenu> ApplicationMenus { get; set; } = new List<ApplicationMenu>();
+
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+
+    [Parameter]
+    public EventCallback<ApplicationMenu> OnMenuChanged { get; set; }
+
+    private async Task OnMenuItemClicked(MenuItem menuItem)
+    {
+        ApplicationMenu? menu = null; 
+        // has parent?
+        var parentMenu = ApplicationMenus?.FirstOrDefault(x => x.Childrens.Any(y => y.Id == menuItem.Id));
+        if (parentMenu != null)
+        {
+            menu = parentMenu.Childrens.FirstOrDefault(x => x.Id == menuItem.Id);
+        }
+        else
+        {
+            menu = ApplicationMenus?.FirstOrDefault(x => x.Id == menuItem.Id);
+        }
+        
+        if(menu != null)
+        {
+            await OnMenuChanged.InvokeAsync(menu);
+        }
+    }
+
+    private const string MenuCacheKey = "MENU";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // var cacheMenus = await LocalStorageService!.GetItemAsStringAsync(MenuCacheKey);
+            // if (!string.IsNullOrWhiteSpace(cacheMenus))
+            // {
+            //     ApplicationMenus = JsonConvert.DeserializeObject<List<ApplicationMenu>>(cacheMenus)!;
+            // }
+            // else
+            // {
+            //     ApplicationMenus = await LayoutInitor!.GetMenus();
+            //     await LocalStorageService.SetItemAsStringAsync(MenuCacheKey, JsonConvert.SerializeObject(ApplicationMenus));
+            // }
+
+            ApplicationMenus = await LayoutInitor!.GetMenus();
+
+            var nowPath = NavigationManager!.Uri.Replace(NavigationManager.BaseUri, "");
+            if(nowPath != "")
+            {
+                var menu = ApplicationMenus?.FirstOrDefault(x => x.Path == nowPath);
+                if(menu != null)
+                {
+                    await OnMenuChanged.InvokeAsync(menu);
+                }
+            }
+
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

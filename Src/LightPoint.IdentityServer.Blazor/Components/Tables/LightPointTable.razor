@@ -1,0 +1,53 @@
+﻿@using AntDesign.TableModels;
+@typeparam TModel where TModel : class, new()
+
+<div Style="@("min-height: " + Height)">
+    <Table @ref="Table"
+           TItem="TModel"
+           DataSource="@TableParameters!.Datas"
+           Total="TableParameters.Total"
+           Loading="TableParameters.Loading"
+           HidePagination="TableParameters.NeedPager"
+           ScrollY="@Height"
+           Size=@TableParameters.Size
+           ScrollX="@TableParameters.ScrollX"
+           Bordered="@TableParameters.Bordered"
+           SelectedRows="TableParameters.SelectedDatas"
+           SelectedRowsChanged="OnSelectedRowsChanged"
+           OnChange="OnChange">
+        @{
+            if (TableParameters.MultiSelection)
+            {
+                <Selection Key="@(typeof(TModel).GetProperty("Id")?.GetValue(context) as string)" />
+            }
+        }
+        @foreach (var tableColumn in TableParameters.TableColumnInfos!)
+        {
+            if (tableColumn.HasSlot && ChildContent != null)
+            {
+                <PropertyColumn Fixed="@tableColumn.Fixed" Title="@tableColumn.Header" Property="GetPropertyExpression(tableColumn.Prop!)" Sortable="tableColumn.Sortable">
+                    <CascadingValue Value="@(new SlotModel<TModel>() { ColumnInfo = tableColumn, Model = @context })">
+                        @(ChildContent(new SlotModel<TModel>() { ColumnInfo = tableColumn, Model = @context }))
+                    </CascadingValue>
+                </PropertyColumn>
+
+            }
+            else
+            {
+                <PropertyColumn Fixed="@tableColumn.Fixed" Title="@tableColumn.Header" Property="GetPropertyExpression(tableColumn.Prop!)" Sortable="tableColumn.Sortable" />
+            }
+        }
+    </Table>
+
+</div>
+
+<Pagination
+    Style="padding-top: 10px"
+    ShowSizeChanger
+    ShowTotal="showTotal"
+    Size="@(TableParameters.Size == TableSize.Small ? PaginationSize.Small : PaginationSize.Default)"
+    OnChange="OnChangePageParams"
+    DefaultCurrent="@TableParameters.PageIndex" 
+    Total="@TableParameters.Total" 
+    PageSize="@TableParameters.Length" 
+    PageSizeOptions="@TableParameters.PageSizeOptions.ToArray()" />

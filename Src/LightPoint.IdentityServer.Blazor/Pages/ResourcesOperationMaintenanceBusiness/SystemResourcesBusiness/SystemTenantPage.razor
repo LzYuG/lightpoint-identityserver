@@ -1,0 +1,85 @@
+﻿@page "/SystemResourcesBusiness/SystemTenant"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM01.SystemResources;
+@using LightPoint.IdentityServer.DtoModels.DM01.SystemResource;
+@using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS01.SystemResources.Interfaces
+
+@inherits PageBase<Guid, SystemTenant, SystemTenantDQM, SystemTenantDCM, ISystemTenantService>
+
+<CardBox Title="系统租户">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="SystemTenantDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="SystemTenantDQM" Name="Operation">
+                <Button Type="@ButtonType.Default" OnClick="()=> OpenForm(context.Model)">密钥</Button>
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model!.Id)">删除</Button>
+            </LightPointTdSlot>
+        </LightPointTable>
+
+         <LightPointDialogForm TModel="SystemTenantDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+        </LightPointDialogForm>
+    </Content>
+</CardBox>
+
+ @code {
+    public override TableParameters<SystemTenantDQM> TableParameters { get; set; } = new TableParameters<SystemTenantDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.Name), Header = "名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.Id), Header = "Id"},
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.TenantIdentifier), Header = "唯一标识", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.SortCode), Header = "排序码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.ExpireTime), Header = "有效期至", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(SystemTenantDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名字", Placeholder = "请输入名字", Prop = "Name", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "唯一标识", Placeholder = "请输入唯一标识", Prop = nameof(SystemTenantDCM.TenantIdentifier), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(SystemTenantDCM.SortCode), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(SystemTenantDCM.Description) },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否禁用", Placeholder = "是否禁用", Prop = nameof(SystemTenantDCM.Disabled) },
+        new FormItemConfig(){ FormItemType = FormItemType.日期时间选择器, Label = "有效期至", Placeholder = "请选择有效期时间", Prop = nameof(SystemTenantDCM.ExpireTime) },
+    };
+
+    public override Expression<Func<SystemTenant, bool>> MontageSearchExpression(TableParameters<SystemTenantDQM> TableParameters)
+    {
+        return x => !x.IsDeleted;
+    }
+
+    public override async Task Update(SystemTenantDCM commandDtoBase)
+    {
+        var res = await Service!.SetAndSaveEntityData(commandDtoBase, true);
+        if (res.IsSuccess)
+        {
+            await Search();
+            await Success(res.Message!);
+        }
+        else
+        {
+            await Error(res.Message!);
+        }
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

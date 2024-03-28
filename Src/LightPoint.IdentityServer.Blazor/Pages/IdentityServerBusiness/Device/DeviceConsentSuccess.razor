@@ -1,0 +1,24 @@
+﻿@page "/Device/Success"
+@layout EmptyLayout
+
+<Result Status="success"
+        Title="已完成"
+        SubTitle="已成功授权该客户端">
+    <Extra>
+        <Button Type="primary" OnClick='async ()=> await ToolsJsInterop!.Redirect("/device")'>继续授权</Button>
+        <Button OnClick='async ()=> await LayoutInitor!.Logout()'>退出登录</Button>
+    </Extra>
+
+</Result>
+
+
+
+@code
+{
+    [Inject]
+    private NavigationManager? NavigationManager { get; set; }
+    [Inject]
+    private ILayoutInitor? LayoutInitor { get; set; }
+    [Inject]
+    private ToolsJsInterop? ToolsJsInterop { get; set; }
+}

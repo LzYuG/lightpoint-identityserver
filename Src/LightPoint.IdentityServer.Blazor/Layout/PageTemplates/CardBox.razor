@@ -1,0 +1,71 @@
+﻿<div >
+    <div>
+       <div class="mainbox-header" >
+                @{
+                    if (Header != null)
+                    {
+                        @Header
+                    }
+                    else
+                    {
+                        <div style="height: @HeaderHeight; line-height: @HeaderHeight;display: flex;justify-content: space-between;align-items: center;padding: 0 10px">
+                            <p style="margin: 0">@Title</p>
+
+                            @{
+                                if (Tools != null)
+                                {
+                                    <div>
+                                    <Space>
+                                        <SpaceItem>
+                                            @Tools
+                                        </SpaceItem>
+                                    </Space>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <Divider Style="margin: 0"/>
+        <div style="max-height: @BodyHeight; min-height: @BodyHeight; overflow-y: scroll; padding: 10px;" id="MainContent">
+            <Watermark Contents="@(new[]{"Light Point", "Identity Server"})" Gap="@((200, 200))">
+                @Content
+            </Watermark>
+         </div>
+    </div>
+   
+</div>
+
+
+
+
+@code {
+    [Parameter]
+    public RenderFragment? Content { get; set; }
+    [Parameter]
+    public RenderFragment? Header { get; set; }
+    [Parameter]
+    public RenderFragment? Tools { get; set; }
+    /// <summary>
+    /// 标题
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    #region 页面配置
+    /// <summary>
+    /// 头部高度
+    /// </summary>
+    [Parameter]
+    public string HeaderHeight { get; set; } = "50px";
+    /// <summary>
+    /// 主体高度
+    /// </summary>
+    [Parameter]
+    public string BodyHeight { get; set; } = "calc(100vh - 240px)";
+
+
+    #endregion
+
+}

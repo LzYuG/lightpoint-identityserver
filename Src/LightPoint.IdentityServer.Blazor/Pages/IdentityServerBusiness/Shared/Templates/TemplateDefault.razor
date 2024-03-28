@@ -1,0 +1,44 @@
+﻿@using LightPoint.IdentityServer.Shared.Helpers
+<div>
+    <Flex Vertical="@false">
+        <div style="width: 60vw; background-image: url(@IdentityServerBusinessTemplatePageParams!.BackgroundImgUri); background-size: 100% 100%;" class="left">
+        </div>
+        <div style="width: 40vw" class="right">
+            <Flex Vertical Justify="space-between" Style="height: 95vh;">
+                 <div>
+                     <Flex Justify="space-between">
+                         <img src="@IdentityServerBusinessTemplatePageParams.ClientLogoUri" style="width: 48px; height: 48px; margin: 2vh" />
+                         <div style="margin: 2vh">
+                             <div style="text-align: right; line-height: 28px">@IdentityServerBusinessTemplatePageParams.Title</div>
+                            <div style="font-size: 12px;text-align: right; line-height: 16px">@IdentityServerBusinessTemplatePageParams.SubTitle</div>
+                        </div>
+
+
+                    </Flex>
+                    <Divider Style="margin: 0" />
+                </div>
+
+
+                @{
+                    if (ChildContent != null)
+                    {
+                        @ChildContent
+                    }
+                }
+                <div style="height: 10px"></div>
+            </Flex>
+            <div style="height: 5vh">
+                <p style="text-align: center;color: grey">@PageConstants.CopyRight</p>
+            </div>
+
+
+        </div>
+    </Flex>
+</div>
+
+@code {
+    [Parameter]
+    public IdentityServerBusinessTemplatePageParams? IdentityServerBusinessTemplatePageParams { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

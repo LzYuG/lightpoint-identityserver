@@ -1,0 +1,71 @@
+﻿@page "/IdentitySeverResourcesBusiness/IdentityServerApiScope"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM03.IdentityServerResources.ApiScope;
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.ApiScope;
+@inherits PageBase<Guid, IdentityServerApiScope, IdentityServerApiScopeDQM, IdentityServerApiScopeDCM, IIdentityServerApiScopeService>
+
+<CardBox Title="IdentityServerApiScope">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="IdentityServerApiScopeDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="IdentityServerApiScopeDQM" Name="Required">
+                @(context.Model.Required ? "是" : "否")
+            </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerApiScopeDQM" Name="Emphasize">
+                @(context.Model.Emphasize ? "是" : "否")
+            </LightPointTdSlot>
+            <LightPointTdSlot TModel="IdentityServerApiScopeDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm TModel="IdentityServerApiScopeDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+ @code {
+    
+    public override TableParameters<IdentityServerApiScopeDQM> TableParameters { get; set; } = new TableParameters<IdentityServerApiScopeDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.Name), Header = "名称", Sortable = true, Width = "200px"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.DisplayName), Header = "显示名称", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.Id), Header = "Id"},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.Required), Header = "是否必须", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.Emphasize), Header = "是否重要", Sortable = true, HasSlot = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.SortCode), Header = "排序码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(IdentityServerApiScopeDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名字", Placeholder = "请输入名字", Prop = "Name", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "显示名称", Placeholder = "请输入显示名称", Prop = nameof(IdentityServerApiScopeDCM.DisplayName), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(IdentityServerApiScopeDCM.SortCode), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否必须", Placeholder = "是否必须", Prop = nameof(IdentityServerApiScopeDCM.Required) },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否重要", Placeholder = "是否重要", Prop = nameof(IdentityServerApiScopeDCM.Emphasize) },
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(IdentityServerApiScopeDCM.Description) },
+    };
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

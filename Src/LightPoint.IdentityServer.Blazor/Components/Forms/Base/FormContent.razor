@@ -1,0 +1,500 @@
+﻿@using FluentValidation
+@using LightPoint.IdentityServer.Blazor.Components.Forms.Models;
+@using Microsoft.AspNetCore.Components.Forms;
+@typeparam TModel where TModel : class, new()
+
+
+<Form Model="@Model"
+	  Layout="@Layout"
+	  WrapperColSpan="WrapperColSpan"
+	  LabelColSpan="LabelColSpan"
+	  ValidateMode="@FormValidateMode.Rules"
+	  LabelAlign="LabelAlign"
+	  ValidateOnChange="@ValidateOnChange"
+	  OnFinish="OnSubmit"
+	  OnFinishFailed="OnSubmitFailed"
+	  @ref="FormRef"
+	  Size="@Size">
+	<GridRow Gutter="16">
+		@foreach (var formItem in FormItemConfigs)
+		{
+			if (!formItem.IsHiddenExpression(Model))
+			{
+				<GridCol Class="gutter-row" Span="formItem.Span">
+					@{
+						var type = typeof(TModel).GetProperty(formItem.Prop)?.PropertyType;
+						var setPropertyFunc = CreateSetPropertyAction(formItem.Prop);
+						var getPropertyFunc = CreateGetPropertyFunc(formItem.Prop);
+						#region 文本框
+						if (formItem.FormItemType == FormItemType.文本框)
+						{
+							if (type == typeof(string))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<Input ValueExpression="GetPropertyExpression<string>(formItem.Prop)"
+										   ValueChanged="@(GetEventCallBack<string>(formItem))"
+										   Disabled="@formItem.Disabled"
+										   DefaultValue="(string)getPropertyFunc!(Model)"
+										   Style="width : 100%"
+										   TValue="string"
+										   Placeholder="@formItem.Placeholder" />
+								</FormItem>
+							}
+							else if (type == typeof(int))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<AntDesign.InputNumber ValueExpression="GetPropertyExpression<int>(formItem.Prop)"
+														   ValueChanged="@(GetEventCallBack<int>(formItem))"
+														   Disabled="@formItem.Disabled"
+														   DefaultValue="(int)getPropertyFunc!(Model)"
+														   TValue="int"
+														   Style="width : 100%"
+														   Min="(int)formItem.Min" Max="(int)formItem.Max" PlaceHolder="@formItem.Placeholder"></AntDesign.InputNumber>
+								</FormItem>
+							}
+							else if (type == typeof(float))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<AntDesign.InputNumber ValueExpression="GetPropertyExpression<float>(formItem.Prop)"
+														   ValueChanged="@(GetEventCallBack<float>(formItem))"
+														   Disabled="@formItem.Disabled"
+														   DefaultValue="(float)getPropertyFunc!(Model)"
+														   TValue="float"
+														   Style="width : 100%"
+														   Min="(float)formItem.Min" Max="(float)formItem.Max" PlaceHolder="@formItem.Placeholder"></AntDesign.InputNumber>
+								</FormItem>
+							}
+							else if (type == typeof(double))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<AntDesign.InputNumber ValueExpression="GetPropertyExpression<double>(formItem.Prop)"
+														   ValueChanged="@(GetEventCallBack<double>(formItem))"
+														   Disabled="@formItem.Disabled"
+														   DefaultValue="(double)getPropertyFunc!(Model)"
+														   TValue="double"
+														   Style="width : 100%"
+														   Min="(double)formItem.Min" Max="(double)formItem.Max" PlaceHolder="@formItem.Placeholder"></AntDesign.InputNumber>
+								</FormItem>
+							}
+							else if (type == typeof(decimal))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<AntDesign.InputNumber ValueExpression="GetPropertyExpression<decimal>(formItem.Prop)"
+														   ValueChanged="@(GetEventCallBack<decimal>(formItem))"
+														   Disabled="@formItem.Disabled"
+														   DefaultValue="(decimal)getPropertyFunc!(Model)"
+														   TValue="decimal"
+														   Style="width : 100%"
+														   Min="formItem.Min" Max="formItem.Max" PlaceHolder="@formItem.Placeholder"></AntDesign.InputNumber>
+								</FormItem>
+							}
+						}
+						else if (formItem.FormItemType == FormItemType.多行文本框)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<TextArea Rows="formItem.Rows" ValueExpression="GetPropertyExpression<string>(formItem.Prop)"
+										  ValueChanged="@(GetEventCallBack<string>(formItem))" Disabled="@formItem.Disabled"
+										  Style="width : 100%"
+										  DefaultValue="@((string)getPropertyFunc!(Model))"
+										  MaxLength="@((int)formItem.Max)" />
+							</FormItem>
+
+						}
+						else if (formItem.FormItemType == FormItemType.密码输入框)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<Input ValueExpression="GetPropertyExpression<string>(formItem.Prop)"
+									   ValueChanged="@(GetEventCallBack<string>(formItem))"
+									   Disabled="@formItem.Disabled"
+									   DefaultValue="(string)getPropertyFunc!(Model)"
+									   Type="password"
+									   Style="width : 100%"
+									   Placeholder="@formItem.Placeholder" />
+							</FormItem>
+						}
+						#endregion
+
+						#region 下拉选择框
+						else if (formItem.FormItemType == FormItemType.下拉单选框)
+						{
+							if (type == typeof(string))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<Select ValueExpression="GetPropertyExpression<string>(formItem.Prop)"
+											ValueChanged="@(GetEventCallBack<string>(formItem))"
+											TItemValue="string"
+											DefaultValue="(string)getPropertyFunc!(Model)"
+											TItem="string"
+											Placeholder="@formItem.Placeholder"
+											Style="width : 100%"
+											Disabled="@formItem.Disabled">
+										<SelectOptions>
+											@foreach (var item in formItem.Options)
+											{
+												<SelectOption TItemValue="string" TItem="string" Value="@((string)item.Value!)" Label=@item.Label />
+											}
+										</SelectOptions>
+									</Select>
+								</FormItem>
+							}
+							else if(type!.IsEnum)
+							{
+								// 注意，如果是枚举类型，则Options中的Value一定也要是枚举类型
+								formItem.Value = getPropertyFunc!(Model).ToString();
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<Select ValueExpression="()=> formItem.Value"
+											ValueChanged="@(async (string value)=>{
+													if(value == null){
+														value = formItem.Value!;
+													}
+													var targetTypeValue = Enum.Parse(type, value);
+													setPropertyFunc!(Model, targetTypeValue!);
+													formItem.Value = value;
+													await ModelChanged.InvokeAsync(Model);
+													if (formItem.OnValueChangeed != null)
+													{
+													    formItem.OnValueChangeed.Invoke(Model);
+													}
+												})"
+											DefaultValue="@(formItem.Value)"
+											TItemValue="string"
+											TItem="string"
+											Style="width : 100%"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled">
+										<SelectOptions>
+											@foreach (var item in formItem.Options)
+											{
+												<SelectOption TItemValue="string" TItem="string" Value="@(item.Value!.ToString())" Label=@item.Label />
+											}
+										</SelectOptions>
+									</Select>
+								</FormItem>
+							}
+							else
+							{
+								var targetTypeParseMethod = type!.GetMethod("Parse", new Type[] { typeof(string) })!;
+								if (targetTypeParseMethod != null)
+								{
+									formItem.Value = getPropertyFunc!(Model).ToString();
+									<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+										<Select ValueExpression="()=> formItem.Value"
+												ValueChanged="@(async (string value)=>{
+													if(value == null){
+														value = formItem.Value!;
+													}
+													var targetTypeValue = targetTypeParseMethod.Invoke(null, [value!]);
+													setPropertyFunc!(Model, targetTypeValue!);
+													formItem.Value = value;
+													await ModelChanged.InvokeAsync(Model);
+													if (formItem.OnValueChangeed != null)
+													{
+													    formItem.OnValueChangeed.Invoke(Model);
+													}
+												})"
+												DefaultValue="@(formItem.Value)"
+												TItemValue="string"
+												TItem="string"
+												Style="width : 100%"
+												Placeholder="@formItem.Placeholder"
+												Disabled="@formItem.Disabled">
+											<SelectOptions>
+												@foreach (var item in formItem.Options)
+												{
+													<SelectOption TItemValue="string" TItem="string" Value="@(item.Value!.ToString())" Label=@item.Label />
+												}
+											</SelectOptions>
+										</Select>
+									</FormItem>
+								}
+							}
+						}
+						#endregion
+
+						#region 开关
+						else if (formItem.FormItemType == FormItemType.开关 && type == typeof(bool))
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<Switch ValueExpression="GetPropertyExpression<bool>(formItem.Prop)"
+										Style="width : 100%"
+										Value="(bool)getPropertyFunc!(Model)"
+										Disabled="@formItem.Disabled"
+										ValueChanged="@(GetEventCallBack<bool>(formItem))" />
+							</FormItem>
+
+						}
+						#endregion
+
+
+						#region 单选框
+						else if (formItem.FormItemType == FormItemType.单选框)
+						{
+							if (type == typeof(string))
+							{
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<RadioGroup ValueExpression="GetPropertyExpression<string>(formItem.Prop)"
+												DefaultValue="(string)getPropertyFunc!(Model)"
+												Style="width : 100%"
+												Disabled="@formItem.Disabled"
+												ValueChanged="@(GetEventCallBack<string>(formItem))">
+										@foreach (var item in formItem.Options)
+										{
+											<Radio TValue="string" Value="((string)item.Value!)">@item.Label</Radio>
+										}
+									</RadioGroup>
+								</FormItem>
+							}
+							else if (type!.IsEnum)
+							{
+								formItem.Value = getPropertyFunc!(Model).ToString();
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<RadioGroup ValueExpression="()=> formItem.Value"
+												Style="width : 100%"
+												DefaultValue="@formItem.Value"
+												Disabled="@formItem.Disabled"
+												ValueChanged="@(async (string value)=>{
+														var targetTypeValue =  Enum.Parse(type, value);
+														setPropertyFunc!(Model, targetTypeValue!);
+														formItem.Value = value;
+														await ModelChanged.InvokeAsync(Model);
+														if (formItem.OnValueChangeed != null)
+														{
+														    formItem.OnValueChangeed.Invoke(Model);
+														}
+													})">
+										@foreach (var item in formItem.Options)
+										{
+											<Radio TValue="int" Value="((int)item.Value!)">@item.Label</Radio>
+										}
+									</RadioGroup>
+								</FormItem>
+							}
+							else
+							{
+								var targetTypeParseMethod = type!.GetMethod("Parse", new Type[] { typeof(string) })!;
+								if (targetTypeParseMethod != null)
+								{
+									formItem.Value = getPropertyFunc!(Model).ToString();
+									<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+										<RadioGroup ValueExpression="()=> formItem.Value"
+													Style="width : 100%"
+													DefaultValue="@formItem.Value"
+													Disabled="@formItem.Disabled"
+													ValueChanged="@(async (string value)=>{
+														var targetTypeValue = targetTypeParseMethod.Invoke(null, [value!]);
+														setPropertyFunc!(Model, targetTypeValue!);
+														formItem.Value = value;
+														await ModelChanged.InvokeAsync(Model);
+														if (formItem.OnValueChangeed != null)
+														{
+														    formItem.OnValueChangeed.Invoke(Model);
+														}
+													})">
+											@foreach (var item in formItem.Options)
+											{
+												<Radio TValue="int" Value="((int)item.Value!)">@item.Label</Radio>
+											}
+										</RadioGroup>
+									</FormItem>
+								}
+							}
+						}
+						#endregion
+
+						#region 下拉多选框
+						else if (formItem.FormItemType == FormItemType.下拉多选框)
+						{
+							if (type == typeof(string))
+							{
+								formItem.MultiSelectorHelper = ((string)getPropertyFunc!(Model))?.Split(formItem.MultiSelectorSplitChart).Where(x => formItem.Options.Any(y => (string)y.Value! == x)).ToList()!;
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<Select Mode="multiple"
+											TItem="string"
+											TItemValue="string"
+											ValuesExpression="()=> formItem.MultiSelectorHelper"
+											DefaultValues="formItem.MultiSelectorHelper"
+											Style="width : 100%"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValuesChanged="async (IEnumerable<string> values)=>{
+										 formItem.MultiSelectorHelper = values.ToList();
+										 if(values != null){
+											setPropertyFunc!(Model, string.Join(formItem.MultiSelectorSplitChart, values));
+										 }
+										 await ModelChanged.InvokeAsync(Model);
+									}">
+										<SelectOptions>
+											@foreach (var item in formItem.Options)
+											{
+												<SelectOption TItemValue="string" TItem="string" Value=@((string)item.Value!) Label=@item.Label />
+											}
+										</SelectOptions>
+									</Select>
+								</FormItem>
+							}
+							else if (type == typeof(List<string>))
+							{
+								formItem.MultiSelectorHelper = (List<string>)getPropertyFunc!(Model);
+								<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+									<Select Mode="multiple"
+											TItem="string"
+											TItemValue="string"
+											ValuesExpression="()=> formItem.MultiSelectorHelper"
+											DefaultValues="formItem.MultiSelectorHelper"
+											Style="width : 100%"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValuesChanged="async (IEnumerable<string> values)=>{
+										 formItem.MultiSelectorHelper = values.ToList();
+										 if(values != null){
+											setPropertyFunc!(Model, values);
+										 }
+										 await ModelChanged.InvokeAsync(Model);
+									}">
+										<SelectOptions>
+											@foreach (var item in formItem.Options)
+											{
+												<SelectOption TItemValue="string" TItem="string" Value=@((string)item.Value!) Label=@item.Label />
+											}
+										</SelectOptions>
+									</Select>
+								</FormItem>
+							}
+						}
+						#endregion
+
+						#region 时间选择器
+
+						else if (formItem.FormItemType == FormItemType.日期选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<DatePicker ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)"
+											Style="width : 100%"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.日期区间选择器
+						&& formItem.EndProp != null && type == typeof(DateTime))
+						{
+							formItem.DateTimePickerHelper.Append(((DateTime)getPropertyFunc!(Model)));
+							var getEndPropertyFunc = CreateGetPropertyFunc(formItem.EndProp);
+							var setEndPropertyFunc = CreateSetPropertyAction(formItem.EndProp);
+							formItem.DateTimePickerHelper.Append((DateTime)getEndPropertyFunc!(Model));
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<RangePicker Style="width : 100%"
+											 Disabled="@formItem.Disabled"
+											 Placeholder="@formItem.Placeholder"
+											 DefaultValue="formItem.DateTimePickerHelper"
+											 OnChange="async (DateRangeChangedEventArgs<DateTime?[]> args)=>{
+								 await OnDateRangeChanged(args, formItem);
+							}" />
+							</FormItem>
+						}
+
+						else if (formItem.FormItemType == FormItemType.时间选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<TimePicker TValue="DateTime" ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))" Style="width : 100%"
+											Placeholder="@formItem.Placeholder"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Disabled="@formItem.Disabled" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.日期时间选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<DatePicker ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)" ShowTime="@true"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))"
+											Style="width : 100%"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.日期时间区间选择器
+						&& formItem.EndProp != null)
+						{
+							formItem.DateTimePickerHelper.Append(((DateTime)getPropertyFunc!(Model)));
+							var getEndPropertyFunc = CreateGetPropertyFunc(formItem.EndProp);
+							var setEndPropertyFunc = CreateSetPropertyAction(formItem.EndProp);
+							formItem.DateTimePickerHelper.Append((DateTime)getEndPropertyFunc!(Model));
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<RangePicker Style="width : 100%"
+											 Disabled="@formItem.Disabled"
+											 ShowTime="@true"
+											 DefaultValue="formItem.DateTimePickerHelper"
+											 Placeholder="@formItem.Placeholder"
+											 OnChange="async (DateRangeChangedEventArgs<DateTime?[]> args)=>{
+								 await OnDateRangeChanged(args, formItem);
+								}" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.周选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<DatePicker ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)"
+											Picker="@DatePickerType.Week"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Style="width : 100%"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.月份选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<DatePicker ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)"
+											Picker="@DatePickerType.Month"
+											Style="width : 100%"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))" />
+							</FormItem>
+						}
+						else if (formItem.FormItemType == FormItemType.年份选择器)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<DatePicker ValueExpression="GetPropertyExpression<DateTime>(formItem.Prop)"
+											Picker="@DatePickerType.Year"
+											Style="width : 100%"
+											DefaultValue="(DateTime)getPropertyFunc!(Model)"
+											Placeholder="@formItem.Placeholder"
+											Disabled="@formItem.Disabled"
+											ValueChanged="@(GetEventCallBack<DateTime>(formItem))" />
+							</FormItem>
+						}
+
+						#endregion
+
+						#region 填充块
+						else if (formItem.FormItemType == FormItemType.填充块)
+						{
+							<div></div>
+						}
+						#endregion
+
+						#region 自定义组件
+						else if (formItem.FormItemType == FormItemType.自定义组件 && ChildContent != null)
+						{
+							<FormItem Label="@formItem.Label" Rules="@(formItem.FormValidationRules.ToArray())">
+								<CascadingValue Value="@(new FormItemSlotModel<TModel>() { FormItemConfig = formItem, Model = @context })">
+									@(
+												ChildContent(new FormItemSlotModel<TModel>() { FormItemConfig = formItem, Model = @context })
+													)
+								</CascadingValue>
+							</FormItem>
+						}
+						#endregion
+					}
+
+				</GridCol>
+			}
+		}
+	</GridRow>
+</Form>

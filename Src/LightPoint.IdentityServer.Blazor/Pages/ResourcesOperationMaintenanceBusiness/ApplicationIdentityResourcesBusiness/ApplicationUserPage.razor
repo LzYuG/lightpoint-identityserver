@@ -1,0 +1,222 @@
+﻿@page "/ResourcesOperationMaintenanceBusiness/ApplicationUser"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM02.ApplicationIdentityResources;
+@using LightPoint.IdentityServer.DtoModels.DM02.ApplicationIdentityResources;
+@using System.ComponentModel.DataAnnotations
+@inherits PageBase<Guid, ApplicationUser, ApplicationUserDQM, ApplicationUserDCM, IApplicationUserService>
+
+<CardBox Title="用户">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">创建新用户</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="ApplicationUserDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="ApplicationUserDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model!.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm LabelColSpan="24" WrapperColSpan="24" Layout="@FormLayout.Vertical" TModel="ApplicationUserDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+             <FormItemSlot TModel="ApplicationUserDCM" Name="Roles">
+                 @{
+                    if(AllRoles != null)
+                    {
+                        foreach(var role in AllRoles)
+                        {
+                            <Checkbox Label="@role.Label" OnChange="(val)=> HandleCheckBoxChange(context.Model!, role, val)" Checked="@(BindedRoles.Any(x=>x.Value == role.Value))" />
+                        }
+                    }
+                }
+                 
+             </FormItemSlot>
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+@code {
+
+    #region Inject
+    [Inject]
+
+    public IApplicationRoleService? RoleService { get; set; }
+
+
+
+    #endregion
+
+    #region 角色绑定
+
+    public List<LightPointSelectOption> AllRoles { get; set; } = new List<LightPointSelectOption>();
+
+    public List<LightPointSelectOption> BindedRoles { get; set; } = new List<LightPointSelectOption>();
+
+
+    private async Task HandleCheckBoxChange(ApplicationUserDCM userDcm, LightPointSelectOption role, bool val)
+    {
+        if (userDcm.Id == Guid.Empty)
+        {
+            return;
+        }
+        if(!val)
+        { 
+            await RemoveRole(userDcm, role);
+        } 
+        else{ 
+            await AddRole(userDcm, role);
+        }
+    }
+
+    public async Task RemoveRole(ApplicationUserDCM userDCM, LightPointSelectOption role)
+    {
+
+        var res = await Service!.RemoveFromRoles(userDCM, new List<ApplicationRoleDCM>() { new ApplicationRoleDCM() { Id = Guid.Parse(role.Value!.ToString()!) } });
+        if (res.IsSuccess)
+        {
+            BindedRoles.Remove(BindedRoles.First(x => x.Value == role.Value));
+            StateHasChanged();
+            await MessageService!.Success(res.Message);
+        }
+        else
+        {
+            await MessageService!.Error(res.Message);
+        }
+    }
+
+
+    public async Task AddRole(ApplicationUserDCM userDCM, LightPointSelectOption role)
+    {
+        var res = await Service!.AddToRoles(userDCM, new List<ApplicationRoleDCM>() { new ApplicationRoleDCM() { Id = Guid.Parse(role.Value!.ToString()!), TenantIdentifier = NowSystemTenant.TenantIdentifier! } });
+        if (res.IsSuccess)
+        {
+            BindedRoles.Add(role);
+            StateHasChanged();
+            await MessageService!.Success(res.Message);
+
+        }
+        else
+        {
+            await MessageService!.Error(res.Message);
+        }
+    }
+
+    #endregion
+
+    public override TableParameters<ApplicationUserDQM> TableParameters { get; set; } = new TableParameters<ApplicationUserDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.Name), Header = "名称", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.UserName), Header = "用户名", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.SortCode), Header = "排序码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.Email), Header = "邮箱", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.PhoneNumber), Header = "手机号码", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationUserDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名字", Placeholder = "请输入名字", Prop = "Name", FormValidationRules = Rules.Required, Span = 8 },
+         new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(ApplicationUserDCM.SortCode), FormValidationRules = Rules.Required, Span = 8},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "用户名", Placeholder = "请输入用户名", Prop = "UserName", FormValidationRules = Rules.Required, Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.密码输入框, Label = "密码", Placeholder = "请输入密码", Prop = nameof(ApplicationUserDCM.Password), FormValidationRules = Rules.Required, Span = 8, IsHiddenExpression = (model) => ((ApplicationUserDCM)model).Id != Guid.Empty },
+        new FormItemConfig(){ FormItemType = FormItemType.密码输入框, Label = "再次确认", Placeholder = "请再次输入密码确认", Prop = nameof(ApplicationUserDCM.ConfirmPassword), FormValidationRules = new List<FormValidationRule>()
+        {
+            new FormValidationRule(){ Required = true, Type = FormFieldType.String, Message = "{0}是必填的"},
+        }, 
+        Span = 8, IsHiddenExpression = (model) => ((ApplicationUserDCM)model).Id != Guid.Empty },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否启用", Placeholder = "请输入密码", Prop = nameof(ApplicationUserDCM.IsEnable), Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否开启双因子认证", Placeholder = "是否开启双因子认证", Prop = nameof(ApplicationUserDCM.TwoFactorEnabled), Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "是否开启多因子认证", Placeholder = "是否开启多因子认证", Prop = nameof(ApplicationUserDCM.MutilFactorEnabled), Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "邮箱", Placeholder = "邮箱", Prop = nameof(ApplicationUserDCM.Email), Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "邮箱是否已经校验", Placeholder = "邮箱是否已经校验", Prop = nameof(ApplicationUserDCM.EmailConfirmed), Span = 8 },
+         new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "手机号码", Placeholder = "手机号码", Prop = nameof(ApplicationUserDCM.PhoneNumber), Span = 8 },
+        new FormItemConfig(){ FormItemType = FormItemType.开关, Label = "手机号码是否已经校验", Placeholder = "手机号码是否已经校验", Prop = nameof(ApplicationUserDCM.PhoneNumberConfirmed), Span = 8 },
+
+        new FormItemConfig(){ FormItemType = FormItemType.自定义组件, Label = "角色绑定", Placeholder = "角色绑定", Prop = "Roles", Span = 24 },
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(ApplicationUserDCM.Description) },
+    };
+
+    public override async Task OpenForm(ApplicationUserDQM? queryDto)
+    {
+        BindedRoles = new List<LightPointSelectOption>();
+        if(queryDto != null)
+        {
+            var bindedRoles = await Service!.InRoles(queryDto.Id, NowSystemTenant.TenantIdentifier!);
+            foreach (var bindedRole in bindedRoles)
+            {
+                var stillRole = AllRoles.FirstOrDefault(x => x.Label == bindedRole);
+                if(stillRole != null)
+                {
+                    BindedRoles.Add(stillRole);
+                }
+            }
+        }
+
+        await base.OpenForm(queryDto);
+    }
+
+    public override Expression<Func<ApplicationUser, bool>> MontageSearchExpression(TableParameters<ApplicationUserDQM> TableParameters)
+    {
+        if (GlobalConstants.UserMutilTenant)
+        {
+            return base.MontageSearchExpression(TableParameters)!;
+        }
+        else
+        {
+            return null!;
+        }
+    }
+
+    public override async Task SubmitForm(DialogFormSubmitModel<ApplicationUserDCM> submitModel)
+    {
+        if (submitModel.Model!.ConfirmPassword != submitModel.Model!.Password)
+        {
+            await this.Error("两次输入的密码不一致");
+            return;
+        }
+        await base.SubmitForm(submitModel);
+    }
+
+    public override async Task Update(ApplicationUserDCM commandDtoBase)
+    {
+        commandDtoBase.TenantIdentifier = this.NowSystemTenant.TenantIdentifier;
+
+        var res = await Service!.SetAndSaveEntityData(this.CurrentSystemAccountConfig, commandDtoBase);
+        if (res.IsSuccess)
+        {
+            await Search();
+            await Success(res.Message!);
+        }
+        else
+        {
+            await Error(res.Message!);
+        }
+    }
+
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            await this.LoadSystemAccountConfigAsync();
+
+            AllRoles = (await RoleService!.GetApiBoCollectionAsync(x => x.TenantIdentifier == NowSystemTenant.TenantIdentifier, x => x.SortCode!, true)).Select(x => new LightPointSelectOption()
+                {
+                    Label = x.Name,
+                    Value = x.Id.ToString()
+                }).ToList();
+
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

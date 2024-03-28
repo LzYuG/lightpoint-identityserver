@@ -1,0 +1,36 @@
+﻿@layout EmptyLayout
+
+<Result Icon="question-circle-outline"
+        Title="退出登录"
+        SubTitle="您正在退出身份认证服务登录态，请确认。">
+    <Extra>
+        <Button Type="primary" OnClick='LogoutSubmit'>确认</Button>
+    </Extra>
+</Result>
+
+
+
+@code
+{
+    [Parameter]
+    public string? AntiForgeryToken { get; set; }
+    [Inject]
+    public ToolsJsInterop? ToolsJsInterop { get; set; }
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+
+    public string? LogoutId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        LogoutId = NavigationManager!.GetQueryParam("logoutId");
+        base.OnInitialized();
+    }
+
+    public async Task LogoutSubmit()
+    {
+        // 使用表单请求上传至 /Account/Login Post
+        await ToolsJsInterop!.PostForm("/Account/Logout", new { LogoutId }, AntiForgeryToken);
+        StateHasChanged();
+    }
+}

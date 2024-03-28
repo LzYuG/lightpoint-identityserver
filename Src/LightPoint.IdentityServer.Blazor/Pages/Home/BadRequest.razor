@@ -1,0 +1,18 @@
+﻿@page "/400"
+@layout EmptyLayout
+
+<Result Status="warning"
+        Title="请求错误"
+        SubTitle="您进行了错误的请求，或者页面参数已失效">
+    <Extra>
+        <Button Type="primary" OnClick='()=> NavigationManager!.NavigateTo("")'>返回主页</Button>
+    </Extra>
+</Result>
+
+
+
+@code
+{
+    [Inject]
+    private NavigationManager? NavigationManager { get; set; }
+}

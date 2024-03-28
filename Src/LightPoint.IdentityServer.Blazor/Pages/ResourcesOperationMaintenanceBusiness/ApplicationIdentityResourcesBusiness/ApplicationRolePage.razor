@@ -1,0 +1,65 @@
+﻿@page "/ResourcesOperationMaintenanceBusiness/ApplicationRole"
+@using LightPoint.IdentityServer.Domain.DomainModels.DM02.ApplicationIdentityResources;
+@using LightPoint.IdentityServer.Domain.DomainModels.DM02.ApplicationIdentityResources.ExtensionProperties;
+@using LightPoint.IdentityServer.DtoModels.DM02.ApplicationIdentityResources;
+@using System.Linq.Expressions;
+@inherits PageBase<Guid, ApplicationRole, ApplicationRoleDQM, ApplicationRoleDCM, IApplicationRoleService>
+
+<CardBox Title="角色">
+    <Tools>
+        <Space>
+            <SpaceItem><Input Placeholder="输入关键字搜索" @bind-Value="TableParameters.SearchTerm"></Input></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Primary" OnClick="Search">搜索</Button></SpaceItem>
+            <SpaceItem><Button Type="@ButtonType.Default" OnClick="() =>  OpenForm(null)">新增</Button></SpaceItem>
+        </Space>
+    </Tools>
+    <Content>
+        <LightPointTable @ref="LightPointTableRef" TModel="ApplicationRoleDQM" @bind-TableParameters="@TableParameters" Search="Search">
+            <LightPointTdSlot TModel="ApplicationRoleDQM" Name="Operation">
+                <Button Type="@ButtonType.Primary" OnClick="()=> OpenForm(context.Model)">编辑</Button>
+                <Button Type="@ButtonType.Primary" Danger OnClick="()=> Delete(context.Model.Id)">删除</Button>
+             </LightPointTdSlot>
+         </LightPointTable>
+
+         <LightPointDialogForm TModel="ApplicationRoleDCM" @ref="LightPointFormRef" FormItemConfigs="FormItemConfigs" OnSubmit="SubmitForm">
+         </LightPointDialogForm>
+     </Content>
+ </CardBox>
+
+ @code {
+    public override TableParameters<ApplicationRoleDQM> TableParameters { get; set; } = new TableParameters<ApplicationRoleDQM>()
+        {
+            Length = 15,
+            TableColumnInfos = new List<TableColumnInfo>()
+            {
+                new TableColumnInfo(){ Prop = nameof(ApplicationRoleDQM.Name), Header = "名称", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationRoleDQM.Tag), Header = "标签", Sortable = true},
+                new TableColumnInfo(){ Prop = nameof(ApplicationRoleDQM.Description), Header = "简介"},
+                new TableColumnInfo(){ Prop = "Operation", Header = "操作", HasSlot = true},
+            },
+        };
+
+    public override List<FormItemConfig> FormItemConfigs { get; set; } = new List<FormItemConfig>()
+    {
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "名字", Placeholder = "请输入名字", Prop = "Name", FormValidationRules = Rules.Required },
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "排序码", Placeholder = "请输入排序码", Prop = nameof(ApplicationRoleDCM.SortCode), FormValidationRules = Rules.Required},
+        new FormItemConfig(){ FormItemType = FormItemType.文本框, Label = "标签", Placeholder = "请输入标签", Prop = nameof(ApplicationRoleDCM.Tag)},
+        new FormItemConfig(){ FormItemType = FormItemType.多行文本框, Label = "备注", Placeholder = "请输入备注", Prop = nameof(ApplicationRoleDCM.Description) },
+    };
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Search();
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    public override Expression<Func<ApplicationRole, bool>> MontageSearchExpression(TableParameters<ApplicationRoleDQM> TableParameters)
+    {
+        return x => x.TenantIdentifier == this.NowSystemTenant!.TenantIdentifier;
+    }
+}

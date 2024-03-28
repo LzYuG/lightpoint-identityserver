@@ -1,0 +1,240 @@
+﻿@layout EmptyLayout
+@page "/Initor"
+@using LightPoint.IdentityServer.Blazor.Pages.Home.Models
+@using LightPoint.IdentityServer.Domain.DomainModels.DM01.SystemResources
+@using LightPoint.IdentityServer.DtoModels.DM01.SystemResource
+@using System.ComponentModel.DataAnnotations
+@using LightPoint.IdentityServer.DtoModels.DM02.ApplicationIdentityResources
+@using LightPoint.IdentityServer.DtoModels.DM03.IdentityServerResources.IdentityResource
+@using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS01.SystemResources.Interfaces
+
+
+<div style="width: 60%; margin: 0 auto; padding-top: 5vh">
+    <div style="width: 48px;margin: 0 auto">
+        <img src="_content/LightPoint.IdentityServer.Blazor/LightPointLogo.png" style="height: 48px;margin: 0 auto; cursor: pointer" />
+    </div>
+    <Divider />
+    <p class="item" style="margin-top: 3vh">感谢使用！</p>
+    <p class="item">下面将引导您进行身份认证服务的初始化：</p>
+
+    <Timeline Style="margin-top: 3vh">
+        <TimelineItem>
+            <Flex Gap="large" Style="width: 100%">
+                <div class="form-item">
+                    <p>初始租户名称：</p>
+                    <AntDesign.Input Placeholder="请输入初始租户名称" MaxLength="20" @bind-Value="@InitorModel.RootTenant" Size="@InputSize.Large">
+                    </AntDesign.Input>
+                </div>
+                <div class="form-item">
+                    <p>初始租户唯一标识：</p>
+                    <AntDesign.Input Placeholder="请输入初始租户唯一标识" MaxLength="20" @bind-Value="@InitorModel.RootTenantIdentifier" Size="@InputSize.Large">
+                    </AntDesign.Input>
+                </div>
+            </Flex>
+        </TimelineItem>
+        <TimelineItem>
+            <Flex Gap="large" Style="width: 100%">
+                <div class="form-item">
+                    <p>最高权限角色名称：</p>
+                    <AntDesign.Input Placeholder="请输入最高权限角色名称" MaxLength="20" @bind-Value="@InitorModel.SystemAdminRoleName" Size="@InputSize.Large">
+                    </AntDesign.Input>
+                </div>
+                <div class="form-item">
+                    <p>最高权限角色显示名称：</p>
+                    <AntDesign.Input Placeholder="用于友好阅读的名称" MaxLength="20" @bind-Value="@InitorModel.SystemAdminRoleDisplayName" Size="@InputSize.Large">
+                    </AntDesign.Input>
+                </div>
+            </Flex>
+        </TimelineItem>
+        <TimelineItem>
+            <div class="form-item">
+                <p>请输入管理员的账号：</p>
+                <AntDesign.Input Placeholder="请输入管理员的账号" MaxLength="20" @bind-Value="@InitorModel.AdminUserName" Size="@InputSize.Large">
+                </AntDesign.Input>
+            </div>
+            
+        </TimelineItem>
+        <TimelineItem>
+            <Flex Gap="large" Style="width: 100%">
+                <div class="form-item">
+                    <p>请输入管理员密码：</p>
+                    <AntDesign.InputPassword @bind-Value="@InitorModel.AdminUserPassword"
+                                             Placeholder="请输入管理员密码"
+                                             MaxLength="50"
+                                             Size="@InputSize.Large">
+                    </AntDesign.InputPassword>
+                </div>
+                <div class="form-item">
+                    <p>再输入一次密码进行确认：</p>
+                    <AntDesign.InputPassword @bind-Value="@InitorModel.AdminUserPasswordConfirm"
+                                             Placeholder="请再输入一次密码进行确认"
+                                             MaxLength="50"
+                                             Size="@InputSize.Large">
+                    </AntDesign.InputPassword>
+                </div>
+            </Flex>
+        </TimelineItem>
+        <TimelineItem>
+            <Flex Gap="large" Style="width: 100%">
+                <div class="form-item">
+                    <p>默认配置标准身份资源，包括：email, phone, address, profile, openid：</p>
+                    <RadioGroup @bind-Value="@_NeedConfigOpenIdConnectIdentityResources">
+                        <Radio Value="0">是</Radio>
+                        <Radio Value="1">否</Radio>
+                    </RadioGroup>
+                </div>
+            </Flex>
+        </TimelineItem>
+    </Timeline>
+    <div style="width: 40%; margin: 0 auto; margin-top: 5vh">
+        <Button OnClick="Submit" Type="@ButtonType.Primary" Size="@ButtonSize.Large" Style="width: 100%;">初始化</Button>
+    </div>
+</div>
+
+<style>
+    .item{
+        margin-top: 1vh;
+        margin-bottom: 0;
+    }
+
+    .form-item{
+        width: 49.5%;
+    }
+
+</style>
+
+@code {
+    [Inject]
+    public IApplicationUserService? ApplicationUserService { get; set; }
+    [Inject]
+    public IApplicationRoleService? ApplicationRoleService { get; set; }
+    [Inject]
+    public ISystemTenantService? SystemTenantService { get; set; }
+    [Inject]
+    public IIdentityServerIdentityResourceService? IdentityServerIdentityResourceService { get; set; }
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+    [Inject]
+    public IMessageService? MessageService{ get; set; }
+    [Inject]
+    public IAppService<Guid, SystemAccountConfig, SystemAccountConfigDQM, SystemAccountConfigDCM>? SystemAccountConfigService { get; set; }
+
+    private int _NeedConfigOpenIdConnectIdentityResources{ get; set; }
+
+    private InitorModel InitorModel { get; set; } = new InitorModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 已注册用户，非初始化场景
+        if ((await ApplicationUserService!.GetApiAmountAsync(x => x.Id != Guid.Empty)) > 0)
+        {
+            NavigationManager!.NavigateTo("");
+        }
+    }
+
+
+    private async Task Submit()
+    {
+        var context = new ValidationContext(InitorModel);
+        var results = new List<ValidationResult>();
+
+        bool isValid = Validator.TryValidateObject(InitorModel, context, results, true);
+
+        if (!isValid)
+        {
+            await MessageService!.Error(results.First().ErrorMessage);
+            return;
+        }
+
+        await SystemTenantService!.DeleteBoAsync(null!);
+        await ApplicationRoleService!.DeleteBoAsync(null!);
+        await ApplicationUserService!.DeleteBoAsync(null!);
+
+        // 租户
+        SystemTenantDCM systemTenant = new SystemTenantDCM()
+            {
+                Id = Guid.NewGuid(),
+                CreateTime = DateTime.Now,
+                Disabled = false,
+                Description = "",
+                ExpireTime = DateTime.Now.AddYears(100),
+                IsDeleted = false,
+                IsRoot = true,
+                Name = InitorModel.RootTenant,
+                TenantIdentifier = InitorModel.RootTenantIdentifier
+            };
+
+        ApplicationRoleDCM applicationRole = new ApplicationRoleDCM()
+            {
+                Id = Guid.NewGuid(),
+                CreateTime = DateTime.Now,
+                Description = "",
+                IsDeleted = false,
+                IsRoot = true,
+                Name = InitorModel.SystemAdminRoleName,
+                NormalizedName = InitorModel.SystemAdminRoleName!.ToUpper(),
+                TenantIdentifier = systemTenant.TenantIdentifier,
+            };
+
+        ApplicationUserDCM applicationUser = new ApplicationUserDCM()
+            {
+                Id = Guid.NewGuid(),
+                CreateTime = DateTime.Now,
+                Description = "",
+                IsDeleted = false,
+                IsEnable = true,
+                IsRoot = true,
+                Name = InitorModel.SystemAdminRoleName,
+                UserName = InitorModel.AdminUserName
+            };
+
+        List<IdentityServerIdentityResourceDCM> identityServerIdentityResources = new List<IdentityServerIdentityResourceDCM>()
+        {
+            new IdentityServerIdentityResourceDCM(){ Id = Guid.NewGuid(), Created = DateTime.Now, CreateTime = DateTime.Now, Description = "", DisplayName = "邮箱", Enabled = true, IsDeleted = false, Name = "email", ShowInDiscoveryDocument = true, TenantIdentifier = systemTenant.TenantIdentifier, SortCode = "IDR001",  },
+            new IdentityServerIdentityResourceDCM(){ Id = Guid.NewGuid(), Created = DateTime.Now, CreateTime = DateTime.Now, Description = "", DisplayName = "手机", Enabled = true, IsDeleted = false, Name = "phone", ShowInDiscoveryDocument = true, TenantIdentifier = systemTenant.TenantIdentifier, SortCode = "IDR002",  },
+            new IdentityServerIdentityResourceDCM(){ Id = Guid.NewGuid(), Created = DateTime.Now, CreateTime = DateTime.Now, Description = "", DisplayName = "资料", Enabled = true, IsDeleted = false, Name = "profile", ShowInDiscoveryDocument = true, TenantIdentifier = systemTenant.TenantIdentifier, SortCode = "IDR003",  },
+            new IdentityServerIdentityResourceDCM(){ Id = Guid.NewGuid(), Created = DateTime.Now, CreateTime = DateTime.Now, Description = "", DisplayName = "地址", Enabled = true, IsDeleted = false, Name = "address", ShowInDiscoveryDocument = true, TenantIdentifier = systemTenant.TenantIdentifier, SortCode = "IDR004",  },
+            new IdentityServerIdentityResourceDCM(){ Id = Guid.NewGuid(), Created = DateTime.Now, CreateTime = DateTime.Now, Description = "", DisplayName = "OpenId", Enabled = true, IsDeleted = false, Name = "openid", ShowInDiscoveryDocument = true, TenantIdentifier = systemTenant.TenantIdentifier, SortCode = "IDR005",  },
+        };
+
+        SystemAccountConfigDCM systemAccountConfig = new SystemAccountConfigDCM()
+            {
+                Id = Guid.NewGuid(),
+                TenantIdentifier = systemTenant.TenantIdentifier, CreateTime = DateTime.Now
+            };
+
+        if((await SystemTenantService!.SetAndSaveEntityData(systemTenant, true)).IsSuccess)
+        {
+            await SystemAccountConfigService!.SetAndSaveEntityData(systemAccountConfig, true);
+            if (_NeedConfigOpenIdConnectIdentityResources == 0)
+            {
+                await IdentityServerIdentityResourceService!.SetAndSaveEntityData(identityServerIdentityResources, true);
+            }
+            if ((await ApplicationRoleService!.SetAndSaveEntityData(applicationRole, true)).IsSuccess)
+            {
+                
+                var registerUserResult = await ApplicationUserService.RegisterUser(new SystemAccountConfigDQM(),applicationUser, InitorModel.AdminUserPassword!, null!, new List<ApplicationRoleDCM>() { applicationRole });
+                if (registerUserResult.IsSuccess)
+                {
+                    await MessageService!.Success("初始化成功!");
+                    NavigationManager!.NavigateTo("");
+                    return;
+                }
+                else
+                {
+                    await MessageService!.Error(registerUserResult.Message);
+                }
+            }
+            else
+            {
+                await MessageService!.Error("创建角色失败");
+            }
+        }
+        else
+        {
+            await MessageService!.Error("初始化租户失败");
+        }
+
+
+    }
+}

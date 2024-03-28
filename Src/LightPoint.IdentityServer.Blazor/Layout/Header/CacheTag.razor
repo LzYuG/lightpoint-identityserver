@@ -1,0 +1,142 @@
+﻿<div class="cache-tag-box">
+    @{
+        if (NavigationManager!.Uri.Replace(NavigationManager.BaseUri, "") == "")
+        {
+            <Tag Color="blue-inverse">主页</Tag>
+        }
+        else
+        {
+            <Tag Class="cache-tag" OnClick='() => GoTo(new CacheTagModel(){ Path = "/"})'>主页</Tag>
+        }
+
+        foreach (var cacheTagModel in CacheTagModels)
+        {
+            if (NavigationManager.Uri.Replace(NavigationManager.BaseUri, "") == cacheTagModel.Path || "/" + NavigationManager.Uri.Replace(NavigationManager.BaseUri, "") == cacheTagModel.Path)
+            {
+                <div @oncontextmenu="() => OnRightClick(cacheTagModel)" @oncontextmenu:preventDefault="true">
+                    <Popconfirm Visible="cacheTagModel.Popconfirm" OnVisibleChange="(val)=> cacheTagModel.Popconfirm = val" Disabled="DisableTagQuickTools"
+                                OkText="关闭全部"
+                                Placement="Placement.Bottom"
+                                OnConfirm="()=> { cacheTagModel.Popconfirm = false; CacheTagModels = new List<CacheTagModel>(); }"
+                                OnCancel="() =>{ cacheTagModel.Popconfirm = false; CacheTagModels = new List<CacheTagModel>(){ cacheTagModel }; }"
+                                CancelText="关闭其他">
+                        <IconTemplate>
+                        </IconTemplate>
+                        <ChildContent>
+                            <Tag Color="blue-inverse" Closable OnClose="async () => await OnClosedTag.InvokeAsync(cacheTagModel)">
+                                 @cacheTagModel.Name
+                             </Tag>
+                         </ChildContent>
+                     </Popconfirm>
+                 </div>
+            }
+            else
+            {
+                <div @oncontextmenu="() => OnRightClick(cacheTagModel)" @oncontextmenu:preventDefault="true">
+                    <Popconfirm Visible="cacheTagModel.Popconfirm" OnVisibleChange="(val)=> cacheTagModel.Popconfirm = val" Disabled="DisableTagQuickTools"
+                                OkText="关闭全部"
+                                Placement="Placement.Bottom"
+                                OnConfirm="()=> CloseAllTag(cacheTagModel)"
+                                OnCancel="() => CloseOtherTag(cacheTagModel)"
+                                CancelText="关闭其他">
+                        <IconTemplate>
+                        </IconTemplate>
+                        <ChildContent>
+                            <Tag Class="cache-tag" OnClick='() => GoTo(cacheTagModel)' Closable OnClose="async () => await OnClosedTag.InvokeAsync(cacheTagModel)">@cacheTagModel.Name</Tag>
+                         </ChildContent>
+                     </Popconfirm>
+                 </div>
+            }
+        }
+    }
+</div>
+
+<Divider Style="margin: 0">
+</Divider>
+
+<style>
+    .cache-tag-box {
+        height: 32px;
+        background-color: #FFF;
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+
+        max-width: 100%;
+        overflow-y: scroll;
+    }
+
+    .cache-tag-box::-webkit-scrollbar{
+            display: none;
+    }
+
+    .cache-tag {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public EventCallback<CacheTagModel> OnClosedTag { get; set; }
+    [Parameter]
+    public EventCallback<CacheTagModel> OnChangeTag { get; set; }
+    [Parameter]
+    public EventCallback<List<CacheTagModel>> OnChangeTags { get; set; }
+
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+    [Inject]
+    public ILocalStorageService? LocalStorageService { get; set; }
+
+    [CascadingParameter]
+    public List<CacheTagModel> CacheTagModels { get; set; } = new List<CacheTagModel>();
+
+    /// <summary>
+    /// 是否屏蔽快捷操作，目前Ant Blazor的Popconfirm有问题，无法屏蔽左键事件，所以先不使用
+    /// Issue : https://github.com/ant-design-blazor/ant-design-blazor/issues/2734
+    /// </summary>
+    private bool DisableTagQuickTools = true;
+
+    private void OnRightClick(CacheTagModel model)
+    {
+        for (var i = 0; i < CacheTagModels.Count; i++)
+        {
+            CacheTagModels[i].Popconfirm = false;
+        }
+        model.Popconfirm = true;
+        StateHasChanged();
+    }
+
+    private async Task GoTo(CacheTagModel model)
+    {
+        for (var i = 0; i < CacheTagModels.Count; i++)
+        {
+            CacheTagModels[i].Popconfirm = false;
+        }
+        StateHasChanged();
+        await OnChangeTag.InvokeAsync(model);
+        NavigationManager!.NavigateTo(model.Path, false);
+    }
+
+
+    private async Task CloseOtherTag(CacheTagModel model)
+    {
+        model.Popconfirm = false;
+        CacheTagModels = new List<CacheTagModel>() { model };
+        await OnChangeTags.InvokeAsync(CacheTagModels);
+        // 不是当前视图
+        if (NavigationManager!.Uri.Replace(NavigationManager.BaseUri, "") != model.Path && "/" + NavigationManager.Uri.Replace(NavigationManager.BaseUri, "") != model.Path)
+        {
+            await GoTo(model);
+        }
+    }
+
+    private async Task CloseAllTag(CacheTagModel model)
+    {
+        model.Popconfirm = false;
+        CacheTagModels = new List<CacheTagModel>();
+        await OnChangeTags.InvokeAsync(CacheTagModels);
+        // 回主页
+        await GoTo(new CacheTagModel() { Path = "/" });
+    }
+}

@@ -1,0 +1,18 @@
+﻿@page "/403"
+@layout EmptyLayout
+
+<Result Status="warning"
+        Title="请求错误"
+        SubTitle="您没有访问该页面的权限">
+    <Extra>
+        <Button Type="primary" OnClick='()=> NavigationManager!.NavigateTo("")'>返回主页</Button>
+    </Extra>
+</Result>
+
+
+
+@code
+{
+    [Inject]
+    private NavigationManager? NavigationManager { get; set; }
+}

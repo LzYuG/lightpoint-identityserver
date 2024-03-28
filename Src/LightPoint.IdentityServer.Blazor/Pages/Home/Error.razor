@@ -1,0 +1,18 @@
+﻿@page "/500"
+@layout EmptyLayout
+
+<Result Status="500"
+        Title="500"
+        SubTitle="抱歉，发生了一些无法预知的错误。">
+    <Extra>
+        <Button Type="primary" OnClick='()=> NavigationManager!.NavigateTo("")'>返回主页</Button>
+    </Extra>
+</Result>
+
+
+
+@code
+{
+    [Inject]
+    private NavigationManager? NavigationManager { get; set; }
+}

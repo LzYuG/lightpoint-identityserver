@@ -1,0 +1,191 @@
+﻿@using LightPoint.IdentityServer.Domain.DomainModels.DM01.SystemResources;
+@using LightPoint.IdentityServer.DtoModels.DM01.SystemResource;
+@using LightPoint.IdentityServer.DtoServices.DtoModelServices.DMS01.SystemResources.Interfaces
+@using LightPoint.IdentityServer.ServerInfrastructure.Middlewares.MutilTenant
+
+<div class="header-box">
+    <div class="flex-box header-box-content">
+        <div>
+            <Breadcrumb>
+                @foreach (var breadcrumbItemModel in BreadcrumbItemModels)
+                {
+                    if (breadcrumbItemModel.Path == null)
+                    {
+                        <BreadcrumbItem>@breadcrumbItemModel.Name</BreadcrumbItem>
+                    }
+                    else
+                    {
+                        <BreadcrumbItem OnClick="async (args) => await ClickBreadcrumbItem(breadcrumbItemModel)" Href="@breadcrumbItemModel.Path">@breadcrumbItemModel.Name</BreadcrumbItem>
+                    }
+                }
+            </Breadcrumb>
+        </div>
+        <div style="height: 64px"></div>
+        <div>
+            <Space>
+                @{
+                    if (TenantOptions != null && TenantOptions!.Count > 1 && IsRootTenant)
+                    {
+                        <SpaceItem>
+                            <Select TItem="LightPointSelectOption"
+                                    Placeholder="未生成租户"
+                                    TItemValue="string"
+                                    DataSource="@TenantOptions"
+                                    @bind-Value="@SelectedTenantId"
+                                    ValueName="@nameof(LightPointSelectOption.Value)"
+                                    LabelName="@nameof(LightPointSelectOption.Label)"
+                                    OnSelectedItemChanged="OnSelectedItemChanged"
+                                                DefaultActiveFirstOption
+                                     Style="width: 200px;">
+                             </Select>
+                         </SpaceItem>
+                    }
+                }
+                
+                <SpaceItem>
+                    <Dropdown Trigger="@(new Trigger[] { Trigger.Click })">
+                        <Overlay>
+                            <Menu>
+                                <MenuItem OnClick="GoProfile">
+                                    <div>个人资料</div>
+                                </MenuItem>
+                                <MenuItem OnClick="Logout">
+                                    <div>退出登录</div>
+                                </MenuItem>
+                            </Menu>
+                        </Overlay>
+                        <ChildContent>
+                            <div style="cursor: pointer">
+                                @{
+                                    if (!string.IsNullOrWhiteSpace(AvatarModel.AvatarUri))
+                                    {
+                                        <Avatar Size="large" Src="@AvatarModel.AvatarUri" />
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(AvatarModel.UserName))
+                                    {
+                                        <Avatar Size="large" Text="@AvatarModel.UserName" />
+                                    }
+                                    else
+                                    {
+                                        <Avatar Size="large" Icon="user" />
+                                    }
+                                }
+                                <Icon Type="caret-down" Theme="outline" />
+                            </div>
+                           
+                        </ChildContent>
+                    </Dropdown>
+                   
+                    
+                </SpaceItem>
+            </Space>
+        </div>
+    </div>
+    <Divider Style="margin: 0">
+
+    </Divider>
+</div>
+
+
+<style>
+    .header-box{
+        
+        height: 64px;
+        position:relative;
+    }
+
+    .header-box-content{
+        padding: 0 20px;
+    }
+</style>
+
+@inject ILayoutInitor LayoutInitor
+@inject ILocalStorageService LocalStorageService
+@code {
+
+    [Inject]
+    private ISystemTenantService? TenantService{ get; set; }
+    [Inject]
+    public TenantInfoAccessor? TenantInfoAccessor { get; set; }
+
+    public bool IsRootTenant { get; set; }
+
+    public List<LightPointSelectOption>? TenantOptions { get; set; }
+
+    public List<SystemTenantDQM>? TenantDatas { get; set; }
+
+    public string? SelectedTenantId { get; set; }
+
+    private AvatarModel AvatarModel { get; set; } = new AvatarModel();
+    [Parameter]
+    public EventCallback<BreadcrumbItemModel> OnClickBreadcrumbItem{ get; set; }
+    /// <summary>
+    /// 第二个参数代表是否需要重载页面
+    /// </summary>
+    [Parameter]
+    public EventCallback<Tuple<SystemTenantDQM, bool>> OnChangeTenant { get; set; }
+
+    public async Task ClickBreadcrumbItem(BreadcrumbItemModel model)
+    {
+        await OnClickBreadcrumbItem.InvokeAsync(model);
+    }
+
+    private async Task OnSelectedItemChanged(LightPointSelectOption option)
+    {
+        if (option != null && option.Value != null)
+        {
+            await LocalStorageService.SetItemAsStringAsync(nameof(SelectedTenantId), option.Value!.ToString());
+            await OnChangeTenant.InvokeAsync(new Tuple<SystemTenantDQM, bool>(TenantDatas!.First(x => x.Id.ToString() == option.Value!.ToString()), true));
+        }
+        else
+        {
+            await LocalStorageService.RemoveItemAsync(nameof(SelectedTenantId));
+            await OnChangeTenant.InvokeAsync(new Tuple<SystemTenantDQM, bool>(new SystemTenantDQM(), true));
+        }
+
+    }
+
+    [CascadingParameter]
+    public List<BreadcrumbItemModel> BreadcrumbItemModels { get; set; } = new List<BreadcrumbItemModel>();
+
+
+    private async Task Logout()
+    {
+        await LayoutInitor.Logout();
+    }
+
+    private async Task GoProfile()
+    {
+        await LayoutInitor.GoProfile(AvatarModel);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            AvatarModel = await LayoutInitor.GetUserInfo();
+
+            IsRootTenant = await TenantService!.IsRootTenant(TenantInfoAccessor!.TenantIdentifier!);
+
+            TenantDatas = await TenantService!.GetApiBoCollectionAsync(x => !x.IsDeleted, x => x.SortCode!, true);
+            var cacheSelectedTenantId = await LocalStorageService.GetItemAsStringAsync(nameof(SelectedTenantId));
+            if (!string.IsNullOrWhiteSpace(cacheSelectedTenantId))
+            {
+                SelectedTenantId = cacheSelectedTenantId;
+                await OnChangeTenant.InvokeAsync(new Tuple<SystemTenantDQM, bool>(TenantDatas!.First(x => x.Id.ToString() == cacheSelectedTenantId), false));
+            }
+            else
+            {
+                await OnChangeTenant.InvokeAsync(new Tuple<SystemTenantDQM, bool>(new SystemTenantDQM() { TenantIdentifier = TenantDatas!.First().TenantIdentifier }, false));
+            }
+            TenantOptions = TenantDatas.Select(x=> new LightPointSelectOption()
+                {
+                    Label = x.Name, Value = x.Id.ToString()
+                }).ToList();
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+
+    }
+}
+

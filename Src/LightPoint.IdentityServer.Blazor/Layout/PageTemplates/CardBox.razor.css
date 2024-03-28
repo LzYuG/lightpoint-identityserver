@@ -1,0 +1,18 @@
+.footer {
+    position: absolute;
+    bottom: 0px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 24px;
+    text-align: center;
+    border-width: 1px 0 0 0;
+    width: 100%;
+}
+
+.mainbox-header{
+    font-size: 16px;
+}
+
+#MainContent {
+    overflow-y: auto;
+}

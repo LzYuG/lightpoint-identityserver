@@ -1,0 +1,18 @@
+﻿
+@{
+    if (SlotModel?.ColumnInfo.Prop == Name)
+    {
+        @ChildContent
+    }
+}
+@typeparam TModel where TModel : class, new()
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [CascadingParameter]
+    public SlotModel<TModel>? SlotModel { get; set; }
+}

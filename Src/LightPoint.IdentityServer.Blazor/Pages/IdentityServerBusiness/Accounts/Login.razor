@@ -1,0 +1,145 @@
+﻿@using LightPoint.IdentityServer.Blazor.Pages.IdentityServerBusiness.Accounts.Models;
+@layout EmptyLayout
+@inherits GlobalConfigPageBase
+
+<IdentityServerBusinessTemplate IdentityServerBusinessTemplatePageParams="IdentityServerBusinessTemplatePageParams">
+    @{
+        if (InitComplated)
+        {
+            if (!IsInMFAValidationState)
+            {
+                <div style="width: 70%; margin: 0 auto">
+
+                    <p style="font-size: 24px">欢迎使用，请登录</p>
+                    <Tabs Draggable @bind-ActiveKey="TabActiveKey">
+                         <TabPane Tab="账号密码" Key="0">
+                             <div style="margin-top: 2vh">
+                                 <AntDesign.Input Placeholder="请输入账号" @bind-Value="@LoginInputModel.Username" Size="@InputSize.Large">
+                                     <Prefix>
+                                         <Icon Type="user" Theme="outline" />
+                                     </Prefix>
+                                 </AntDesign.Input>
+                             </div>
+                             <div class="item-margin">
+                                 <AntDesign.Input Type="password" @bind-Value="@LoginInputModel.Password"
+                                                  Placeholder="请输入密码"
+                                                  Size="@InputSize.Large">
+                                     <Prefix>
+                                         <Icon Type="lock" Theme="outline" />
+                                     </Prefix>
+                                 </AntDesign.Input>
+                             </div>
+                         </TabPane>
+                         @{
+                            if (CurrentServerCommonConfig != null)
+                            {
+                                if (CurrentServerCommonConfig.EnableLoginWithPhoneNumber)
+                                {
+                                    <TabPane Tab="短信验证码" Key="1">
+                                        <div style="margin-top: 2vh">
+                                            <AntDesign.Input Placeholder="请输入手机号绑定的邮箱" @bind-Value="@LoginInputModel.PhoneNumber" Size="@InputSize.Large">
+                                                <Prefix>
+                                                    <Icon Type="user" Theme="outline" />
+                                                </Prefix>
+                                            </AntDesign.Input>
+                                        </div>
+                                        <div class="item-margin">
+                                            <AntDesign.Input Placeholder="请输入短信验证码" @bind-Value="@LoginInputModel.ShortMessageCode" Size="@InputSize.Large">
+                                                <Prefix>
+                                                    <Icon Type="lock" Theme="outline" />
+                                                </Prefix>
+                                                <Suffix>
+                                                    @{
+                                                        if (ShortMessageSendingIterval > 0)
+                                                        {
+                                                            <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(ShortMessageSendingIterval)秒后重新发送</Button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendLoginByPhoneNumberValidationCodeShortMessage">获取验证码</HumanMachineValidateOperationButton>
+                                                        }
+                                                    }
+                                                </Suffix>
+                                            </AntDesign.Input>
+                                        </div>
+                                    </TabPane>
+                                }
+                                if (CurrentServerCommonConfig.EnableLoginWithEmail)
+                                {
+                                    <TabPane Tab="邮箱验证码" Key="2">
+                                        <div style="margin-top: 2vh">
+                                            <AntDesign.Input Placeholder="请输入账号绑定的邮箱" @bind-Value="@LoginInputModel.Email" Size="@InputSize.Large">
+                                                <Prefix>
+                                                    <Icon Type="user" Theme="outline" />
+                                                </Prefix>
+                                            </AntDesign.Input>
+                                        </div>
+                                        <div class="item-margin">
+                                            <AntDesign.Input Placeholder="请输入邮箱收到的验证码" @bind-Value="@LoginInputModel.EmailCode" Size="@InputSize.Large">
+                                                <Prefix>
+                                                    <Icon Type="lock" Theme="outline" />
+                                                </Prefix>
+                                                <Suffix>
+                                                    @{
+                                                        if (EmailSendingIterval > 0)
+                                                        {
+                                                            <Button Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round">@(EmailSendingIterval)秒后重新发送</Button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <HumanMachineValidateOperationButton Type="@ButtonType.Default" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="SendLoginByEmailValidationCodeEmail">获取验证码</HumanMachineValidateOperationButton>
+                                                        }
+                                                    }
+                                                </Suffix>
+                                            </AntDesign.Input>
+                                        </div>
+                                    </TabPane>
+                                }
+                            }
+
+                        }
+
+                    </Tabs>
+
+                    @{
+                        if (CurrentServerCommonConfig != null && CurrentServerCommonConfig.AllowRemenberme)
+                        {
+                            <div class="item-margin">
+                                <Checkbox @bind-Checked="@LoginInputModel.RememberLogin">
+                                    记住本次登录
+                                </Checkbox>
+                            </div>
+                        }
+                    }
+
+                    <div class="item-margin">
+                        <HumanMachineValidateOperationButton OnClick="@LoginSubmit" Type="@ButtonType.Primary" Size="@ButtonSize.Large" Style="width: 100%">立即登录</HumanMachineValidateOperationButton>
+                    </div>
+                    <div class="item-margin">
+                        <Flex Justify="space-between">
+                            @{
+                                if (CurrentSystemAccountConfig != null && CurrentSystemAccountConfig.SelfRegisterEnabled)
+                                {
+                                    <Flex>
+                                        <p>没有账号？</p><p style="cursor:pointer; color:#3A62D7" @onclick="() => GoRegister()">立即注册</p>
+                                    </Flex>
+                                }
+                                if (CurrentServerCommonConfig != null && CurrentServerCommonConfig.EnableUserSelfResetPassword)
+                                {
+                                    <p style="cursor:pointer; color:#3A62D7" @onclick="()=> GoForgetPassword()">忘记密码？</p>
+                                }
+                            }
+                        </Flex>
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div style="width: 70%; margin: 0 auto">
+                    <LoginMFAValidator ApplicationUser="ApplicationUser" Success="MFASuccessRedirect" CurrentServerEmailConfig="CurrentServerEmailConfig" CurrentServerShortMessageServiceConfig="CurrentServerShortMessageServiceConfig"></LoginMFAValidator>
+                </div>
+            }
+        }
+    }
+</IdentityServerBusinessTemplate>

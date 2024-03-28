@@ -1,0 +1,19 @@
+﻿@using LightPoint.IdentityServer.Blazor.Components.Forms.Models;
+@{
+    if (SlotModel?.FormItemConfig.Prop == Name)
+    {
+        @ChildContent
+    }
+}
+
+@typeparam TModel where TModel : class, new()
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [CascadingParameter]
+    public FormItemSlotModel<TModel>? SlotModel { get; set; }
+}

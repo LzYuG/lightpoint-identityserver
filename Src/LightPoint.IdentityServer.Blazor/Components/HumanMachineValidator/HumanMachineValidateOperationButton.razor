@@ -1,0 +1,74 @@
+﻿@inherits GlobalConfigPageBase
+
+<Button OnClick="@OnClickNative" Type="@Type" Size="@Size" Style="@Style" Shape="@Shape" Disabled="@Disabled">
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+</Button>
+
+@{
+    if (_VerifyCodeModelVisible)
+    {
+        <Modal Title="当前操作需要校验" Footer="null" Width="300" MaskClosable="@false"
+               @bind-Visible="@_VerifyCodeModelVisible">
+            <HumanMachineValidator CurrentServerCommonConfig="this.CurrentServerCommonConfig" @ref="HumanMachineValidatorRef" OnSuccess="@ValidateSuccess" />
+        </Modal>
+    }
+}
+
+
+@code {
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; } = default!;
+    [Parameter]
+    public string? Type { get; set; }
+    [Parameter]
+    public string? Size { get; set; }
+    [Parameter]
+    public string? Style { get; set; }
+    [Parameter]
+    public string? Shape { get; set; }
+    [Parameter]
+    public bool Disabled { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private MouseEventArgs? CacheMouseEventArgs { get; set; }
+
+    private bool _VerifyCodeModelVisible{ get; set; }
+
+    private HumanMachineValidator? HumanMachineValidatorRef { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadServerCommonConfigAsync();
+        }
+    }
+
+
+    private async Task OnClickNative(MouseEventArgs mouseEventArgs)
+    {
+        CacheMouseEventArgs = mouseEventArgs;
+        if (this.CurrentServerCommonConfig!.EnableHumanMachineVerification)
+        {
+            _VerifyCodeModelVisible = true;
+            await Task.Delay(300);
+            HumanMachineValidatorRef!.Refresh();
+        }
+        else
+        {
+            await OnClick.InvokeAsync(mouseEventArgs);
+        }
+    }
+
+
+    private async Task ValidateSuccess()
+    {
+        _VerifyCodeModelVisible = false;
+        StateHasChanged();
+        await OnClick.InvokeAsync(CacheMouseEventArgs);
+    }
+}

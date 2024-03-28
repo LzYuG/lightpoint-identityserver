@@ -1,0 +1,39 @@
+﻿@using Microsoft.AspNetCore.Http
+@layout EmptyLayout
+
+@code {
+    [Inject]
+    public ToolsJsInterop? ToolsJsInterop { get; set; }
+    [Inject]
+    public IHttpContextAccessor? httpContextAccessor { get; set; }
+    [Inject]
+    public NavigationManager? NavigationManager { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // 用户已经登录，并且是有角色的，导航至无权限界面
+            if (httpContextAccessor!.HttpContext!.User.Identity!.IsAuthenticated && httpContextAccessor!.HttpContext!.User.Claims.Any(x => x.Type == "role"))
+            {
+                await ToolsJsInterop!.Redirect("/403");
+                return;
+            }
+
+            // 用户已经登录，只是没有权限进入管理界面，导航至个人界面
+            else if (httpContextAccessor!.HttpContext!.User.Identity!.IsAuthenticated)
+            {
+                await ToolsJsInterop!.Redirect("/Personal");
+                return;
+            }
+
+            var relativePath = new Uri(NavigationManager!.Uri)!.PathAndQuery;
+            var encodedPath = System.Net.WebUtility.UrlEncode(relativePath);
+            if (encodedPath == "null")
+            {
+                encodedPath = "/";
+            }
+            await ToolsJsInterop!.Redirect("/Account/Login?returnUrl=" + encodedPath);
+        }
+    }
+}

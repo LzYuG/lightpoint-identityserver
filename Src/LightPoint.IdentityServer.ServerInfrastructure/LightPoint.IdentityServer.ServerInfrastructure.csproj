@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AlibabaCloud.SDK.Dysmsapi20170525" Version="2.0.24" />
+    <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.0" />
+    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="Hangfire" Version="1.8.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="MimeKit" Version="4.3.0" />
+    <PackageReference Include="Minio" Version="6.0.2" />
+    <PackageReference Include="SkiaSharp.QrCode" Version="0.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LightPoint.IdentityServer.Domain\LightPoint.IdentityServer.Domain.csproj" />
+    <ProjectReference Include="..\LightPoint.IdentityServer.DtoModels\LightPoint.IdentityServer.DtoModels.csproj" />
+    <ProjectReference Include="..\LightPoint.IdentityServer.DtoServices\LightPoint.IdentityServer.DtoServices.csproj" />
+    <ProjectReference Include="..\LightPoint.IdentityServer.Infrastructure\LightPoint.IdentityServer.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

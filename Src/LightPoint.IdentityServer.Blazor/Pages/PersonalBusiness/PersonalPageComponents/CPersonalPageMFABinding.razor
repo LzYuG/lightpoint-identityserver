@@ -1,0 +1,178 @@
+﻿@using LightPoint.IdentityServer.Shared.BusinessEnums.BE02.ApplicationIdentityResources
+@inherits GlobalConfigPageBase
+
+
+@{
+    if (ApplicationUserDCM != null)
+    {
+        
+
+        <p style="padding-top: 10px"></p>
+        <Divider Orientation="center" Style="font-weight:bold">启用或关闭MFA模块</Divider>
+
+        <GridRow Gutter="16">
+            <GridCol Span="12">
+                <p style="margin: 0; padding-top: 20px">双端点认证</p>
+                <Switch Checked="ApplicationUserDCM!.TwoFactorEnabled" @bind-Value="ApplicationUserDCM!.TwoFactorEnabled" Size="@InputSize.Large" CheckedChildren="启用" UnCheckedChildren="关闭"
+                        OnChange="async (bool value)=> await SaveUserUpdate()" />
+            </GridCol>
+            <GridCol Span="12">
+                <p style="margin: 0; padding-top: 20px">多端点认证</p>
+                <Switch Checked="ApplicationUserDCM!.MutilFactorEnabled" @bind-Value="ApplicationUserDCM!.MutilFactorEnabled" Size="@InputSize.Large" CheckedChildren="启用" UnCheckedChildren="关闭"
+                        OnChange="async (bool value)=> await SaveUserUpdate()" />
+            </GridCol>
+        </GridRow>
+
+        if (ApplicationUserDCM!.ApplicationUserMultiFactorAuthentications != null)
+        {
+            <Tabs Animated>
+             <TabPane Tab="@(ApplicationUserMultiFactorAuthenticationType.时间型动态令牌.ToString())" Key="@(((int)ApplicationUserMultiFactorAuthenticationType.时间型动态令牌).ToString())">
+                 @{
+                        var applicationUserMultiFactorAuthentication = ApplicationUserDCM!.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == ApplicationUserMultiFactorAuthenticationType.时间型动态令牌);
+                        if(applicationUserMultiFactorAuthentication != null)
+                        {
+                            <p>已绑定到校验器</p>
+                            <Button Size="@ButtonSize.Large" OnClick="async() => await RemoveTOTPAuthenticationSubmit(applicationUserMultiFactorAuthentication)" Danger>清除绑定</Button>
+                        }
+                        else if(SetupCode != null)
+                        {
+                            <div class="pc-items">
+                                <Space>
+                                    <SpaceItem>
+                                        <div>
+                                            <img src="@SetupCode!.QrCodeSetupImageUrl" style="width: 200px; height: 200px" />
+                                        </div>
+                                    </SpaceItem>
+                                    <SpaceItem>
+                                        <div>
+                                            <p>请使用校验器扫描二维码或手动复制安全码至校验器：</p>
+                                            <p style="width: 30vw; word-wrap: break-word">@SetupCode!.ManualEntryKey</p>
+                                            <div Style="width: 50%">
+                                                <AntDesign.Input Placeholder="请输入最新生成的校验码" AutoComplete="@false" @bind-Value="@InputTOTPCode" Size="@InputSize.Large">
+                                                    <Suffix>
+                                                        <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="AddTOTPAuthenticationSubmit"></Button>
+                                                    </Suffix>
+                                                </AntDesign.Input>
+                                            </div>
+                                            <div style="padding-top: 10px">
+                                                <span>还没下载校验器？</span>
+                                                <Popover Title="扫码下载" Trigger="@(new AntDesign.Trigger[] { AntDesign.Trigger.Hover})">
+                                                    <ChildContent>
+                                                        <a href="@AndroidAuthenticatorDownloadUri">Android</a>
+                                                    </ChildContent>
+                                                    <ContentTemplate>
+                                                        <img src="@AndroidAuthenticatorDownloadUriQRCode" style="width: 200px; height: 200px" />
+                                                    </ContentTemplate>
+                                                </Popover>
+                                                |
+                                                <Popover Title="扫码下载" Trigger="@(new AntDesign.Trigger[] { AntDesign.Trigger.Hover})">
+                                                    <ChildContent>
+                                                        <a href="@IOSAuthenticatorDownloadUri">IOS</a>
+                                                    </ChildContent>
+                                                    <ContentTemplate>
+                                                        <img src="@IOSAuthenticatorDownloadUriQRCode" style="width: 200px; height: 200px" />
+                                                    </ContentTemplate>
+                                                </Popover>
+                                               
+                                            </div>
+                                        </div>
+                                    </SpaceItem>
+                                </Space>
+
+
+                            </div>
+                            <div class="mobile-items" style="width: 100%">
+                                <p>请复制安全码至校验器：</p>
+                                <p style="width: 100%;  word-wrap: break-word">@SetupCode!.ManualEntryKey</p>
+
+                                
+
+                                <div Style="width: 100%">
+                                    <AntDesign.Input Placeholder="请输入最新生成的校验码" AutoComplete="@false" @bind-Value="@InputTOTPCode" Size="@InputSize.Large">
+                                        <Suffix>
+                                            <Button Icon="@(IconType.Outline.Check)" Type="@ButtonType.Primary" Size="@ButtonSize.Small" Shape="@ButtonShape.Round" OnClick="AddTOTPAuthenticationSubmit"></Button>
+                                        </Suffix>
+                                    </AntDesign.Input>
+                                </div>
+
+                                <div style="padding-top: 10px">
+                                    <span>还没下载校验器？</span>
+                                    <a href="@AndroidAuthenticatorDownloadUri">Android</a>
+                                    |
+                                    <a href="@IOSAuthenticatorDownloadUri">IOS</a>
+                                </div>
+                            </div>
+                        }
+                }
+             </TabPane>
+             @{
+                    if (!string.IsNullOrWhiteSpace(ApplicationUserDCM!.PhoneNumber) && ApplicationUserDCM.PhoneNumberConfirmed)
+                    {
+                        <TabPane Tab="@(ApplicationUserMultiFactorAuthenticationType.短信验证码.ToString())" Key="@(((int)ApplicationUserMultiFactorAuthenticationType.短信验证码).ToString())">
+                            @{
+                                var applicationUserMultiFactorAuthentication = ApplicationUserDCM!.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == ApplicationUserMultiFactorAuthenticationType.短信验证码);
+                                if (applicationUserMultiFactorAuthentication == null)
+                                {
+                                    <Switch Checked="false" Size="@InputSize.Large" CheckedChildren="启用" UnCheckedChildren="关闭" OnChange="async (bool value)=> await HandleShortMessageValidationCodeMultiFactorAuthentication()" />
+                                }
+                                else
+                                {
+                                    <Switch Size="@InputSize.Large" Checked="@applicationUserMultiFactorAuthentication.IsEnable" @bind-Value="@applicationUserMultiFactorAuthentication.IsEnable"
+                                            OnChange="async (bool value)=> { applicationUserMultiFactorAuthentication.IsEnable = value; await HandleShortMessageValidationCodeMultiFactorAuthentication(); }"
+                                            CheckedChildren="启用" UnCheckedChildren="关闭" />
+                                }
+                            }
+                        </TabPane>
+                    }
+                }
+
+                @{
+                    if (!string.IsNullOrWhiteSpace(ApplicationUserDCM!.Email) && ApplicationUserDCM.EmailConfirmed)
+                    {
+                        <TabPane Tab="@(ApplicationUserMultiFactorAuthenticationType.邮箱验证码.ToString())" Key="@(((int)ApplicationUserMultiFactorAuthenticationType.邮箱验证码).ToString())">
+                            @{
+                                var applicationUserMultiFactorAuthentication = ApplicationUserDCM!.ApplicationUserMultiFactorAuthentications!.FirstOrDefault(x => x.ApplicationUserMultiFactorAuthenticationType == ApplicationUserMultiFactorAuthenticationType.邮箱验证码);
+                                if (applicationUserMultiFactorAuthentication == null)
+                                {
+                                    <Switch Size="@InputSize.Large" Checked="false" CheckedChildren="启用" UnCheckedChildren="关闭" OnChange="async (bool value)=> await HandleEmailValidationCodeMultiFactorAuthentication()" />
+                                }
+                                else
+                                {
+                                    <Switch Size="@InputSize.Large" Checked="@applicationUserMultiFactorAuthentication.IsEnable" @bind-Value="@applicationUserMultiFactorAuthentication.IsEnable"
+                                            OnChange="async (bool value)=> { applicationUserMultiFactorAuthentication.IsEnable = value; await HandleEmailValidationCodeMultiFactorAuthentication(); }"
+                                            CheckedChildren="启用" UnCheckedChildren="关闭" />
+                                }
+                            }
+                        </TabPane>
+                    }
+                }
+
+
+
+            </Tabs>
+        }
+    }
+}
+
+
+<style>
+    .pc-items{
+        display : unset;
+    }
+
+    .mobile-items{
+        display: none;
+    }
+
+    @@media screen and (max-aspect-ratio: 3/2) and (max-width: 768px) {
+        .pc-items {
+            display: none !important;
+        }
+
+        .mobile-items {
+            width: 100% !important;
+            display: unset !important;
+        }
+    }
+
+</style>

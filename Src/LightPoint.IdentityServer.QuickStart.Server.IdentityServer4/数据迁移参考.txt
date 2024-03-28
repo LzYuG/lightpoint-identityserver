@@ -1,0 +1,6 @@
+--------------------------------------- dbContext所在项目 ------------------ 启动项目(实际项目下，请修改该值为正确的名称)
+Add-Migration -Name "lpApp001" -Project "LightPoint.IdentityServer.QuickStart.Foundation"  -StartupProject "LightPoint.IdentityServer.QuickStart.Server.IdentityServer4"
+Update-Database -Migration "lpApp001"  -Project "LightPoint.IdentityServer.QuickStart.Foundation"  -StartupProject "LightPoint.IdentityServer.QuickStart.Server.IdentityServer4"
+
+Script-Migration -Project "LightPoint.IdentityServer.QuickStart.Foundation"  -StartupProject "LightPoint.IdentityServer.QuickStart.Server.IdentityServer4"
+Remove-Migration -Project "LightPoint.IdentityServer.QuickStart.Foundation"  -StartupProject "LightPoint.IdentityServer.QuickStart.Server.IdentityServer4"
